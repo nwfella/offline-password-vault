@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Offline Password Vault 🔐</title>
+<meta name="description" content="A paranoid's password manager that never touches a network — generate, vault, encrypt, and check breaches entirely in-browser.">
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --border: #30363d;
+    --txt: #c9d1d9;
+    --txt2: #8b949e;
+    --accent: #58a6ff;
+    --accent2: #1f6feb;
+    --green: #3fb950;
+    --yellow: #d29922;
+    --orange: #d4761c;
+    --red: #f85149;
+    --purple: #bc8cff;
+    --radius: 8px;
+    --font: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--txt);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.6;
+  }
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  header h1 { font-size: 1.25rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  header h1 span { color: var(--txt2); font-weight: 400; font-size: 0.85rem; }
+  header .tagline { font-size: 0.8rem; color: var(--txt2); }
+  .container { max-width: 960px; margin: 0 auto; padding: 24px 16px; flex: 1; width: 100%; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--txt2);
+    padding: 12px 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-family: var(--font);
+    position: relative;
+    transition: color 0.15s;
+  }
+  .tab-btn:hover { color: var(--txt); }
+  .tab-btn.active { color: var(--accent); }
+  .tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--txt2);
+    margin-bottom: 12px;
+  }
+
+  /* Form elements */
+  label { display: block; font-size: 0.85rem; color: var(--txt2); margin-bottom: 4px; }
+  select, input[type="text"], input[type="number"], input[type="password"] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--txt);
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    font-family: var(--font);
+    width: 100%;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  select:focus, input:focus { border-color: var(--accent); }
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 3px;
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid var(--surface);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface2);
+    color: var(--txt);
+    font-size: 0.85rem;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .btn:hover { background: var(--border); border-color: var(--txt2); }
+  .btn-primary {
+    background: var(--accent2);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover { background: var(--accent); }
+  .btn-danger { border-color: var(--red); color: var(--red); }
+  .btn-danger:hover { background: var(--red); color: #fff; }
+  .btn-success { border-color: var(--green); color: var(--green); }
+  .btn-success:hover { background: var(--green); color: #000; }
+  .btn-sm { padding: 4px 10px; font-size: 0.8rem; }
+  .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* Password display */
+  .password-display {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-family: var(--mono);
+    font-size: 1.1rem;
+    word-break: break-all;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .password-display .pw-text { flex: 1; }
+  .password-display .pw-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+  /* Strength meter */
+  .strength-meter { margin-top: 12px; }
+  .strength-bar {
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+  .strength-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s, background 0.3s;
+    width: 0%;
+  }
+  .strength-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--txt2);
+  }
+  .strength-label .entropy { font-family: var(--mono); color: var(--accent); }
+
+  /* Vault table */
+  .vault-controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .vault-search {
+    flex: 1;
+    min-width: 180px;
+  }
+  .vault-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--txt2);
+  }
+  .vault-empty p { margin-top: 8px; font-size: 0.85rem; }
+  .vault-table { width: 100%; border-collapse: collapse; }
+  .vault-table th {
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--txt2);
+    border-bottom: 1px solid var(--border);
+  }
+  .vault-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+  .vault-table tr:hover td { background: var(--surface2); }
+  .vault-table .pw-cell { font-family: var(--mono); font-size: 0.8rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .vault-table .actions-cell { text-align: right; white-space: nowrap; }
+
+  /* Breach check */
+  .breach-result { margin-top: 12px; }
+  .breach-safe { color: var(--green); }
+  .breach-compromised { color: var(--red); }
+  .breach-error { color: var(--orange); }
+  .breach-loading { color: var(--txt2); }
+
+  /* Export/Import */
+  .export-area {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    width: 100%;
+    min-height: 100px;
+    resize: vertical;
+    color: var(--txt2);
+    margin-top: 8px;
+  }
+  .passphrase-setup { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .passphrase-setup input { flex: 1; min-width: 150px; }
+
+  /* Toast */
+  .toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .toast {
+    background: var(--surface2);
+    color: var(--txt);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 16px;
+    font-size: 0.85rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    animation: toast-in 0.3s ease;
+    max-width: 340px;
+  }
+  .toast.success { border-color: var(--green); }
+  .toast.error { border-color: var(--red); }
+  .toast.info { border-color: var(--accent); }
+  @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Settings row */
+  .settings-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: end;
+  }
+  .settings-row .field { flex: 1; min-width: 120px; }
+  .settings-row .field.small { max-width: 100px; }
+
+  /* Pronounceable pattern builder */
+  .pattern-demo { font-family: var(--mono); font-size: 0.8rem; color: var(--txt2); margin-top: 4px; }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    header { flex-direction: column; align-items: flex-start; }
+    .settings-row .field { min-width: 100%; }
+    .vault-table { font-size: 0.8rem; }
+    .password-display { flex-direction: column; align-items: stretch; }
+    .password-display .pw-actions { justify-content: flex-end; }
+  }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 16px;
+    color: var(--txt2);
+    font-size: 0.75rem;
+    border-top: 1px solid var(--border);
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+
+  /* Checkbox toggle */
+  .toggle-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .toggle-row label { margin-bottom: 0; cursor: pointer; }
+
+  /* Modal overlay for import */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9998;
+  }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    max-width: 400px;
+    width: 90%;
+  }
+  .modal h3 { margin-bottom: 12px; }
+  .modal .btn-group { margin-top: 16px; justify-content: flex-end; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🔐 Offline Password Vault <span>+ Generator</span></h1>
+  <div class="tagline">Zero-server. Zero-tracking. Zero-compromise.</div>
+</header>
+
+<div class="container">
+  <div class="tabs" role="tablist">
+    <button class="tab-btn active" data-tab="generate" role="tab">Generate</button>
+    <button class="tab-btn" data-tab="vault" role="tab">Vault <span id="vault-count" style="font-size:0.8rem;color:var(--txt2)"></span></button>
+    <button class="tab-btn" data-tab="export" role="tab">Export / Import</button>
+    <button class="tab-btn" data-tab="about" role="tab">About</button>
+  </div>
+
+  <!-- ===== GENERATE TAB ===== -->
+  <div class="tab-panel active" id="panel-generate">
+    <div class="card">
+      <div class="card-title">Password Generator</div>
+      <div class="settings-row">
+        <div class="field">
+          <label for="gen-type">Type</label>
+          <select id="gen-type">
+            <option value="xkcd">XKCD-style (word phrase)</option>
+            <option value="alphanumeric">Random alphanumeric</option>
+            <option value="pin">PIN</option>
+            <option value="pronounceable">Pronounceable</option>
+          </select>
+        </div>
+        <div class="field small">
+          <label for="gen-length">Length</label>
+          <input type="number" id="gen-length" value="16" min="4" max="128">
+        </div>
+        <div class="field small">
+          <label for="gen-count">Count</label>
+          <input type="number" id="gen-count" value="1" min="1" max="50">
+        </div>
+      </div>
+
+      <div id="xkcd-options" class="settings-row" style="margin-top:12px;">
+        <div class="field small">
+          <label for="xkcd-words">Words</label>
+          <input type="number" id="xkcd-words" value="4" min="2" max="8">
+        </div>
+        <div class="field small">
+          <label for="xkcd-sep">Separator</label>
+          <select id="xkcd-sep">
+            <option value="-">- (hyphen)</option>
+            <option value=" ">␣ (space)</option>
+            <option value=".">. (dot)</option>
+            <option value="_">_ (underscore)</option>
+            <option value="!">! (bang)</option>
+          </select>
+        </div>
+        <div class="field">
+          <div class="toggle-row">
+            <input type="checkbox" id="xkcd-capitalize" checked>
+            <label for="xkcd-capitalize">Capitalize</label>
+          </div>
+          <div class="toggle-row">
+            <input type="checkbox" id="xkcd-number" checked>
+            <label for="xkcd-number">Append digit</label>
+          </div>
+        </div>
+      </div>
+
+      <div id="pronounce-options" class="settings-row" style="margin-top:12px;display:none;">
+        <div class="field small">
+          <label for="pron-pattern">Pattern</label>
+          <select id="pron-pattern">
+            <option value="CVC">CVC (e.g. "tob")</option>
+            <option value="CVCV">CVCV (e.g. "bote")</option>
+            <option value="CVCC">CVCC (e.g. "bort")</option>
+            <option value="CCVC">CCVC (e.g. "blot")</option>
+            <option value="CVCVC">CVCVC (e.g. "boret")</option>
+            <option value="CVCVCV" selected>CVCVCV (e.g. "boteri")</option>
+          </select>
+        </div>
+        <div class="field small">
+          <label for="pron-repeats">Repeats</label>
+          <input type="number" id="pron-repeats" value="2" min="1" max="6">
+        </div>
+      </div>
+
+      <div id="pin-options" class="settings-row" style="margin-top:12px;display:none;">
+        <div class="field small">
+          <label for="pin-digits">Digits</label>
+          <input type="number" id="pin-digits" value="6" min="4" max="12">
+        </div>
+      </div>
+
+      <div class="btn-group" style="margin-top:16px;">
+        <button class="btn btn-primary" id="btn-generate">⚡ Generate</button>
+        <button class="btn" id="btn-copy-all">📋 Copy All</button>
+        <button class="btn btn-success" id="btn-save-to-vault">💾 Save to Vault</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Generated Passwords</div>
+      <div id="generated-list"></div>
+      <div id="strength-detail" style="margin-top:12px;"></div>
+    </div>
+  </div>
+
+  <!-- ===== VAULT TAB ===== -->
+  <div class="tab-panel" id="panel-vault">
+    <div class="card">
+      <div class="card-title">Ephemeral Vault <span style="font-weight:400;text-transform:none;font-size:0.8rem;">— stored in sessionStorage, vanishes on tab close</span></div>
+      <div class="vault-controls">
+        <input type="text" class="vault-search" id="vault-search" placeholder="🔍 Search sites or usernames..." autocomplete="off">
+        <button class="btn btn-sm" id="vault-clear-filter">Clear</button>
+        <button class="btn btn-sm btn-danger" id="vault-clear-all">🗑 Clear All</button>
+      </div>
+      <div id="vault-content">
+        <div class="vault-empty">
+          <div style="font-size:2rem;margin-bottom:8px;">🔐</div>
+          <strong>Your vault is empty</strong>
+          <p>Generate passwords and save them, or add entries manually.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Add Entry Manually</div>
+      <div class="settings-row">
+        <div class="field">
+          <label for="manual-site">Site / Service</label>
+          <input type="text" id="manual-site" placeholder="e.g. github.com">
+        </div>
+        <div class="field">
+          <label for="manual-username">Username / Email</label>
+          <input type="text" id="manual-username" placeholder="user@example.com">
+        </div>
+        <div class="field">
+          <label for="manual-password">Password</label>
+          <input type="text" id="manual-password" placeholder="hunter2">
+        </div>
+      </div>
+      <button class="btn btn-primary" id="manual-add" style="margin-top:8px;">➕ Add to Vault</button>
+    </div>
+  </div>
+
+  <!-- ===== EXPORT / IMPORT TAB ===== -->
+  <div class="tab-panel" id="panel-export">
+    <div class="card">
+      <div class="card-title">Encrypted Export (AES-GCM)</div>
+      <p style="font-size:0.85rem;color:var(--txt2);margin-bottom:12px;">
+        Export your vault as a portable encrypted blob. Set a passphrase — it's never sent anywhere.
+        Keep the blob + passphrase separate for security.
+      </p>
+      <div class="passphrase-setup">
+        <input type="password" id="export-passphrase" placeholder="Enter export passphrase..." autocomplete="off">
+        <button class="btn btn-primary" id="btn-export">🔒 Encrypt & Export</button>
+      </div>
+      <textarea class="export-area" id="export-output" placeholder="Your encrypted vault will appear here..." readonly></textarea>
+      <button class="btn btn-sm" id="btn-copy-export" style="margin-top:8px;">📋 Copy Blob</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Import Encrypted Vault</div>
+      <p style="font-size:0.85rem;color:var(--txt2);margin-bottom:12px;">
+        Paste an encrypted blob below and enter the passphrase to decrypt and restore your vault entries.
+      </p>
+      <textarea class="export-area" id="import-input" placeholder="Paste encrypted blob here..." style="min-height:80px;"></textarea>
+      <div class="passphrase-setup" style="margin-top:8px;">
+        <input type="password" id="import-passphrase" placeholder="Enter passphrase..." autocomplete="off">
+        <button class="btn btn-primary" id="btn-import">🔓 Decrypt & Import</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ABOUT TAB ===== -->
+  <div class="tab-panel" id="panel-about">
+    <div class="card">
+      <div class="card-title">About This Tool</div>
+      <p style="margin-bottom:12px;">
+        <strong>Offline Password Vault + Generator</strong> is a paranoid's password manager
+        that <em>never touches a network</em> — except for the privacy-preserving
+        <a href="https://haveibeenpwned.com/API/v3#SearchingPwnedPasswordsByRange" target="_blank" style="color:var(--accent);">HIBP k-anonymity API</a>
+        for breach checks (only the first 5 hex chars of your password hash are sent).
+      </p>
+      <h3 style="font-size:0.95rem;margin-bottom:8px;margin-top:16px;">Features</h3>
+      <ul style="font-size:0.85rem;color:var(--txt2);padding-left:20px;line-height:2;">
+        <li><strong>Password generation</strong> — XKCD-style word phrases, random alphanumeric, PINs, pronounceable passwords</li>
+        <li><strong>Strength meter</strong> — real-time entropy calculation (bits) with color-coded bar</li>
+        <li><strong>Ephemeral vault</strong> — site/password combos stored in <code>sessionStorage</code> only</li>
+        <li><strong>Encrypted export</strong> — AES-256-GCM via the Web Crypto API, zero dependency</li>
+        <li><strong>Breach check</strong> — privacy-preserving k-anonymity lookup against HaveIBeenPwned</li>
+        <li><strong>Copy to clipboard</strong> — one-click copy for any password</li>
+        <li><strong>Zero data on disk</strong> — unless you explicitly export, nothing is ever stored</li>
+      </ul>
+      <h3 style="font-size:0.95rem;margin-bottom:8px;margin-top:16px;">Entropy Model</h3>
+      <p style="font-size:0.85rem;color:var(--txt2);">
+        Entropy is calculated as H = log₂(N<sup>L</sup>) where N is the character set size and L is the length.
+        For XKCD phrases it's H = L<sub>words</sub> × log₂(dictionary_size). The meter thresholds:
+        <span style="color:var(--red);">&lt;30 bits</span> ·
+        <span style="color:var(--orange);">30–50</span> ·
+        <span style="color:var(--yellow);">50–70</span> ·
+        <span style="color:var(--green);">70–100</span> ·
+        <span style="color:var(--purple);">&gt;100 bits</span>
+      </p>
+      <h3 style="font-size:0.95rem;margin-bottom:8px;margin-top:16px;">Source</h3>
+      <p style="font-size:0.85rem;color:var(--txt2);">
+        Fully client-side. Open source on <a href="https://github.com/nwfella/offline-password-vault" target="_blank" style="color:var(--accent);">GitHub</a>.
+        No backend, no analytics, no tracking.
+      </p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Offline Password Vault &bull; Zero-server &bull; <a href="https://github.com/nwfella/offline-password-vault" target="_blank">GitHub</a>
+</footer>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ============================================================
+// WORD LIST (1000 common English words for XKCD-style phrases)
+// ============================================================
+const WORDS = [
+"ability","able","aboard","about","above","accept","accident","account","achieve","across","act","action","active","activity","actual","add","address","admit","adopt","adult","advance","advantage","adventure","advice","affair","affect","afford","afraid","after","afternoon","again","against","age","agency","agent","agree","ahead","aid","aim","air","airport","alive","all","allow","almost","alone","along","already","also","alter","always","amount","ancient","anger","angle","animal","announce","annual","another","answer","any","apart","appear","apple","apply","appoint","approve","area","argue","arise","arm","army","around","arrange","arrest","arrive","arrow","art","article","ask","aspect","assault","asset","assist","assume","attack","attempt","attend","attract","author","authority","auto","available","average","avoid","award","aware","away","baby","back","background","bad","bag","balance","ball","band","bank","bar","barely","barrel","base","basic","basket","battle","beach","bean","bear","beat","beauty","become","bed","bedroom","beer","before","begin","behavior","behind","believe","bell","belong","below","belt","bench","bend","benefit","best","better","beyond","bicycle","big","bill","bind","bird","birth","bit","bite","black","blade","blame","blank","blast","bleed","blend","bless","blind","block","blood","blow","blue","board","boat","body","bold","bomb","bone","book","boost","border","born","borrow","boss","both","bother","bottle","bottom","bounce","box","boy","brain","branch","brass","brave","bread","break","breath","breed","brick","bridge","brief","bright","bring","broad","broken","brother","brown","brush","bubble","budget","build","bullet","bunch","burden","burn","burst","bus","business","busy","button","buy","cabinet","cable","cake","calculate","call","calm","camera","camp","campaign","can","cancel","candle","capable","capital","captain","capture","carbon","care","career","careful","cargo","carry","case","cash","cast","catch","category","cattle","cause","ceiling","cell","center","central","century","chain","chair","chamber","champion","chance","change","channel","chapter","charge","charity","chart","chase","cheap","check","cheese","chest","chicken","chief","child","chip","choice","choose","church","circle","citizen","city","civil","claim","class","classic","classroom","clean","clear","clerk","clever","click","client","climate","climb","clock","close","closure","cloth","clothes","cloud","club","clue","cluster","coach","coal","coast","code","coffee","coin","collapse","colleague","collect","college","color","column","combine","come","comfort","command","comment","commerce","commit","common","communicate","community","company","compare","compete","complex","computer","concern","condition","conduct","conference","confirm","conflict","confuse","connect","conscious","consequence","consider","consist","constant","construct","consult","consume","contact","contain","content","contest","context","contract","contrast","contribute","control","convention","conversation","convert","convince","cook","cookie","cool","cooperate","cope","copy","core","corner","correct","cost","cotton","couch","could","council","count","counter","country","county","couple","courage","course","court","cousin","cover","crack","craft","crash","crazy","cream","create","creative","credit","crew","crime","crisis","criteria","critical","crop","cross","crowd","crucial","culture","cup","cure","curious","current","curtain","curve","custom","customer","cut","cycle","dad","damage","dance","danger","dare","dark","data","database","date","daughter","dawn","day","dead","deal","dear","death","debate","debt","decade","decide","decision","deck","declare","decline","deep","deer","defeat","defend","define","defy","degree","delay","deliver","demand","deny","depart","depend","deposit","depress","depth","deputy","derive","describe","desert","design","desk","desperate","despite","destroy","detail","detect","develop","device","devote","dialogue","diamond","diet","differ","difficult","digest","digital","dinner","direct","dirt","disable","disagree","disappear","disaster","discipline","discount","discover","discuss","disease","dismiss","display","dispute","distance","distinct","distribute","district","disturb","dive","divide","division","doctor","document","dog","dollar","domain","door","double","doubt","down","downtown","dozen","draft","drag","drain","drama","dramatic","draw","drawer","dream","dress","drift","drink","drive","drop","drought","drug","dry","due","during","dust","duty","dynamic","each","eager","ear","early","earn","earth","ease","east","eastern","easy","eat","echo","economy","edge","edition","editor","educate","education","effect","effective","effort","eight","either","elbow","elder","elect","election","element","elephant","elite","else","emerge","emotion","emperor","employ","employee","employer","empty","enable","encounter","encourage","end","enemy","energy","enforce","engage","engine","engineer","enhance","enjoy","enormous","enough","ensure","enter","enterprise","entertain","entire","entry","envelope","environment","episode","equal","equipment","era","error","escape","especially","essay","essential","establish","estate","estimate","evaluate","even","evening","event","eventually","ever","every","evidence","evil","exact","examine","example","exceed","excellent","except","exchange","excite","excuse","execute","exercise","exhibit","exist","existing","expand","expect","expense","expensive","experience","experiment","expert","explain","explore","export","expose","express","extend","extent","external","extra","extreme","eye","fabric","face","facility","fact","factor","factory","faculty","fade","fail","failure","fair","fairly","faith","fall","familiar","family","fan","fantasy","far","farm","fashion","fast","fasten","fat","fate","father","fault","favor","favorite","fear","feature","federal","feed","feel","fellow","female","fence","few","fiber","fiction","field","fierce","fifteen","fight","figure","file","fill","film","final","finance","find","fine","finger","finish","fire","firm","first","fish","fit","five","fix","flag","flame","flash","flat","flavor","flee","flesh","flight","flip","float","flood","floor","flow","flower","fluid","fly","focus","folk","follow","food","foot","football","for","force","foreign","forest","forever","forget","form","formal","former","formula","fortune","forward","foundation","founder","four","frame","framework","free","freedom","freeze","french","frequency","frequent","fresh","friend","friendly","frog","front","fruit","fuel","full","fun","function","fund","funny","future","gain","galaxy","gallery","game","gang","gap","garage","garbage","garden","gas","gate","gather","gaze","gear","gender","gene","general","generate","generation","generous","genetic","genius","gentle","genuine","gesture","get","ghost","giant","gift","gifted","girl","give","glad","glance","glass","global","glove","glow","goal","gold","golden","good","govern","government","grab","grace","grade","gradually","grain","grand","grandfather","grant","graph","grass","grateful","grave","great","green","greet","ground","group","grow","growth","guarantee","guard","guess","guest","guide","guilty","guitar","gun","gut","guy","habit","hair","half","hall","hand","handle","hang","happen","happy","harbor","hard","hardly","harm","hat","hate","have","head","headline","health","hear","heart","heat","heaven","heavy","height","hello","help","hence","herb","here","heritage","hero","hide","high","highlight","highway","hill","him","hip","hire","historian","history","hit","hold","hole","holiday","hollow","home","honest","honor","hook","hope","horizon","horror","horse","hospital","host","hotel","hour","house","housing","human","humor","hundred","hunt","hunter","hurt","husband","hypothesis","ice","icon","idea","identify","ignore","illegal","image","imagine","immediate","immense","immune","impact","implement","imply","import","importance","impose","improve","impulse","incentive","inch","incident","include","income","increase","incredible","indeed","indicate","indirect","individual","industry","infant","inflation","influence","inform","initial","initiative","injury","inner","innocent","innovation","input","inquiry","insect","inside","insight","inspect","inspire","install","instance","instant","instead","institute","instruction","instrument","insurance","intact","integrate","intellectual","intelligence","intend","intense","intention","interaction","interest","internal","international","internet","interpret","interview","into","introduce","invade","invent","invest","investigate","investor","invite","iron","island","isolate","issue","item","itself","jacket","jail","jam","jet","jewel","job","join","joint","joke","journal","journalist","journey","joy","judge","judgment","juice","jump","junction","junior","jury","justice","justify","keen","keep","key","kick","kid","kill","kind","king","kiss","kitchen","knee","knife","knock","know","knowledge","label","labor","lab","lack","ladder","lady","lake","land","landscape","lane","language","large","largely","laser","last","late","later","latter","laugh","launch","law","layer","lazy","lead","leader","leaf","league","lean","leap","learn","least","leather","leave","lecture","left","leg","legal","lemon","lend","length","lesson","let","letter","level","library","license","lid","life","lift","light","like","likely","limit","line","link","lion","lip","liquid","list","listen","literature","little","live","load","loan","local","locate","lock","lodge","logical","lonely","long","look","lord","lose","loss","lost","lot","loud","love","lovely","lover","low","lower","loyal","luck","lucky","lunch","lung","machine","mad","magazine","magic","magnet","magnificent","main","maintain","major","majority","make","maker","male","manage","manager","manner","manufacture","many","map","march","margin","mark","market","marriage","married","marry","mask","mass","massive","master","match","material","matter","mature","maximum","maybe","mayor","meal","mean","measure","meat","mechanic","media","medicine","medium","meet","meeting","member","membership","memory","mental","mention","menu","merchant","mercy","merely","merge","merit","mess","message","metal","method","middle","midnight","might","mild","mile","military","milk","mill","million","mind","mine","minister","minor","minority","minute","miracle","mirror","missile","mission","mistake","mix","mixture","mobile","mode","model","moderate","modern","modest","modify","moment","monitor","month","moon","moral","more","moreover","morning","mortgage","most","mostly","mother","motion","motor","mountain","mouth","move","movement","movie","much","multiple","murder","muscle","museum","music","musical","musician","mutual","mystery","myth","narrow","nation","national","native","natural","nature","navy","near","nearby","nearly","neat","necessary","neck","need","negative","negotiate","neighbor","neither","nerve","network","neutral","never","nevertheless","new","news","newspaper","next","nice","night","nine","noble","nobody","nod","noise","nominate","none","nonetheless","normal","normally","north","northern","nose","notable","note","nothing","notice","notion","novel","now","nowhere","nuclear","number","numerous","nurse","nut","object","objective","obligation","observe","obtain","obvious","occasion","occupy","occur","ocean","odd","off","offense","offer","office","officer","official","often","oil","okay","old","olympic","onion","online","only","open","operate","operation","operator","opinion","opponent","opportunity","oppose","opposite","option","orange","orbit","order","ordinary","organ","organize","orientation","origin","original","other","otherwise","ought","outcome","outlet","outline","output","outside","outsider","oven","over","overall","overcome","overlook","owe","own","owner","pace","pack","package","page","pain","paint","painting","pair","palace","palm","pan","panel","panic","paper","parent","park","parliament","part","participant","particular","partly","partner","party","pass","passage","passenger","passion","past","path","patient","patrol","pattern","pause","pay","payment","peace","peak","peasant","penalty","people","pepper","perfect","perform","performance","perhaps","period","permanent","permission","permit","person","personal","personality","perspective","persuade","pet","phase","phenomenon","philosophy","phone","photo","photograph","phrase","physical","physically","physician","piano","pick","picture","piece","pile","pilot","pin","pink","pioneer","pipe","pitch","pizza","place","plain","plan","plane","planet","plant","plate","platform","play","player","please","pleasure","plenty","plot","plug","plus","pocket","poem","poet","poetry","point","pole","police","policy","political","politician","politics","poll","pollution","pool","poor","pop","popular","population","porch","port","portion","portrait","pose","position","positive","possess","possibility","possible","possibly","post","pot","potato","potential","pound","pour","poverty","powder","power","powerful","practical","practice","pray","prayer","precisely","predict","prefer","preference","pregnancy","pregnant","premise","premium","prepare","presence","present","preserve","president","press","pressure","presume","pretend","pretty","prevail","prevent","previous","price","pride","priest","primarily","primary","prime","principal","principle","print","prior","priority","prison","prisoner","privacy","private","probably","problem","procedure","proceed","process","produce","product","production","profession","professional","professor","profit","program","progress","project","promise","promote","prompt","proof","proper","property","proportion","proposal","propose","prospect","protect","protection","protein","protest","proud","prove","provide","provider","province","provision","provoke","psychology","public","publication","publicity","publish","pull","pump","punch","punish","purchase","pure","purpose","pursue","push","put","puzzle","qualify","quality","quantity","quarter","queen","question","quick","quickly","quiet","quietly","quit","quite","quote","race","radical","radio","rage","rail","rain","raise","range","rank","rapid","rare","rarely","rate","rather","rating","ratio","raw","reach","react","reaction","read","reader","reading","ready","real","reality","realize","really","reason","reasonable","recall","receive","recent","recipe","reckon","recognition","recognize","recommend","record","recover","recruit","red","reduce","reduction","refer","reference","reflect","reform","refresh","refugee","refuse","regard","regime","region","register","regret","regular","regulate","reject","relate","relation","relationship","relative","relax","release","relevant","relief","religion","religious","rely","remain","remark","remedy","remember","remind","remote","remove","render","rent","repair","repeat","replace","reply","report","represent","republic","reputation","request","require","requirement","research","reserve","reside","resident","resign","resist","resolution","resolve","resort","resource","respect","respond","response","responsibility","responsible","rest","restaurant","restore","restrict","result","retain","retire","retreat","return","reveal","revenue","reverse","review","revolution","reward","rhythm","rich","ride","rifle","right","ring","riot","rip","rise","risk","ritual","rival","river","road","rock","rocket","role","roll","romantic","roof","room","root","rope","rough","roughly","round","route","routine","row","royal","rub","rubber","ruin","rule","ruler","run","runaway","running","rural","rush","sacred","sacrifice","sad","safe","safety","sail","sake","salad","salary","sale","salt","salvation","sample","sanction","sand","satellite","satisfaction","satisfy","save","saving","scale","scandal","scatter","scene","schedule","scheme","scholar","scholarship","school","science","scientist","scope","score","scream","screen","script","seal","search","season","seat","second","secret","secretary","section","sector","secure","security","see","seed","seek","select","selection","self","sell","senate","senator","send","senior","sense","sensitive","sentence","separate","sequence","series","serious","serve","service","session","set","settle","settlement","setup","seven","several","severe","shade","shadow","shake","shall","shape","share","sharp","shed","sheet","shelf","shell","shelter","shield","shift","shine","ship","shirt","shock","shoe","shoot","shop","shopping","shore","short","shortly","shot","should","shoulder","shout","show","shower","shrug","shut","sick","side","sight","sign","signal","significant","silence","silent","silk","silly","silver","similar","simple","simply","simulate","single","sister","sit","site","situation","size","skill","skin","skirt","sky","slave","sleep","slice","slide","slight","slip","slope","slow","slowly","small","smart","smell","smile","smoke","smooth","snap","snow","so-called","social","society","soft","software","soil","solar","soldier","solid","solution","solve","some","somebody","somehow","someone","something","sometimes","somewhat","son","song","soon","sophisticated","sorry","sort","soul","sound","source","south","southern","space","span","speak","speaker","special","specialist","species","specific","speech","speed","spell","spend","sphere","spill","spin","spirit","spiritual","split","spoke","sponsor","spoon","sport","spot","spray","spread","spring","square","squeeze","stable","staff","stage","stair","stake","stand","standard","standing","star","stare","start","state","statement","station","statistics","status","stay","steady","steal","steam","steel","steep","steer","stem","step","stick","stiff","still","stock","stomach","stone","stop","storage","store","storm","story","straight","strain","strange","stranger","strategy","stream","street","strength","stress","stretch","strike","string","strip","stroke","strong","structure","struggle","student","studio","study","stuff","stupid","style","subject","submit","subsequent","substance","substitute","suburb","succeed","success","successful","such","suck","sudden","suddenly","suffer","sufficient","sugar","suggest","suggestion","suicide","suit","summer","summit","sun","super","supply","support","suppose","supreme","sure","surely","surface","surgery","surprise","surrender","surround","survey","survival","survive","survivor","suspect","suspend","sustain","swallow","swear","sweep","sweet","swim","swing","switch","symbol","sympathy","symptom","system","table","tackle","tactic","tail","take","tale","talent","talk","tall","tank","tape","target","task","taste","tax","teach","teacher","teaching","team","tear","technical","technique","technology","tell","temperature","temple","temporary","tenant","tend","tendency","tender","tennis","tension","term","terms","terrain","terrible","territory","terror","test","text","than","thank","thanks","that","theater","theft","theme","then","theory","therapy","there","therefore","they","thick","thin","thing","think","thinking","third","thirty","this","thorough","though","thought","thousand","threat","threaten","three","throat","through","throughout","throw","thumb","thus","ticket","tie","tight","till","time","tiny","tip","tire","tired","tissue","title","today","together","tomorrow","tone","tongue","tonight","tool","tooth","top","topic","toss","total","totally","touch","tough","tour","tourist","tournament","toward","towards","tower","town","track","trade","tradition","traditional","traffic","tragedy","trail","train","training","transfer","transform","transition","translate","transport","trap","trash","travel","tray","treat","treatment","treaty","tree","tremendous","trend","trial","tribe","trick","trigger","trip","triumph","troop","trophy","trouble","truck","true","truly","trunk","trust","truth","try","tube","tumble","tune","tunnel","turn","twelve","twenty","twice","twin","twist","type","typical","ugly","ultimate","umbrella","unable","uncle","under","undergo","understand","undertake","unemployment","unfold","unfortunate","uniform","union","unique","unit","unite","unity","universal","universe","university","unknown","unless","unlike","unlikely","unusual","update","upon","upper","upset","urban","urge","use","used","useful","user","usual","utility","vacation","vacuum","valid","valley","valuable","value","variable","variation","variety","various","vary","vast","vehicle","venture","version","versus","vertical","very","vessel","veteran","via","victim","victory","video","view","village","violate","violence","violent","virtually","virtue","virus","visible","vision","visit","visitor","visual","vital","vitamin","vocal","voice","volume","volunteer","vote","vulnerable","wage","wait","walk","wall","wander","want","war","warm","warn","warning","warrant","warrior","wash","waste","watch","water","wave","way","weak","wealth","wealthy","weapon","wear","weather","web","wedding","week","weekend","weekly","weigh","weight","welcome","welfare","well","west","western","wet","whale","what","whatever","wheel","when","whenever","where","whereas","whether","which","while","whisper","white","whole","who","whoever","whom","whose","why","wide","widely","widespread","width","wife","wild","will","willing","win","wind","window","wine","wing","winner","winter","wipe","wire","wisdom","wise","wish","wit","witch","withdraw","within","without","witness","woman","wonder","wonderful","wood","wooden","word","work","worker","working","workshop","world","worldwide","worm","worry","worse","worship","worst","worth","worthy","would","wound","wrap","write","writer","writing","written","wrong","yard","yeah","year","yell","yellow","yes","yesterday","yet","yield","young","your","yourself","youth","zone"
+];
+
+// ============================================================
+// CHARACTER SETS
+// ============================================================
+const CHARS = {
+  upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+  lower: 'abcdefghijklmnopqrstuvwxyz',
+  digits: '0123456789',
+  special: '!@#$%^&*()_+-=[]{}|;:,.<>?/~'
+};
+
+// Vowels & consonants for pronounceable passwords
+const VOWELS = 'aeiou';
+const CONSONANTS = 'bcdfghjklmnpqrstvwxyz';
+
+// ============================================================
+// CORE FUNCTIONS
+// ============================================================
+
+function randInt(min, max) {
+  const range = max - min + 1;
+  const arr = new Uint32Array(1);
+  crypto.getRandomValues(arr);
+  return min + (arr[0] % range);
+}
+
+function pick(arr) { return arr[randInt(0, arr.length - 1)]; }
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = randInt(0, i);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// --- XKCD-style ---
+function generateXkcd(wordCount, separator, capitalize, appendNumber) {
+  const selected = [];
+  const pool = [...WORDS];
+  shuffle(pool);
+  for (let i = 0; i < wordCount; i++) {
+    let w = pool[i % pool.length];
+    if (capitalize) w = w.charAt(0).toUpperCase() + w.slice(1);
+    selected.push(w);
+  }
+  let phrase = selected.join(separator);
+  if (appendNumber) phrase += randInt(0, 99).toString().padStart(2, '0');
+  return phrase;
+}
+
+function entropyXkcd(wordCount, capitalize, appendNumber) {
+  const poolSize = WORDS.length;
+  let bits = wordCount * Math.log2(poolSize);
+  if (capitalize) bits += wordCount; // each word doubles (1 bit per word)
+  if (appendNumber) bits += Math.log2(100); // 0-99
+  return bits;
+}
+
+// --- Alphanumeric ---
+function generateAlphanumeric(length) {
+  const all = CHARS.upper + CHARS.lower + CHARS.digits;
+  let pw = '';
+  for (let i = 0; i < length; i++) pw += all[randInt(0, all.length - 1)];
+  // ensure at least one of each type
+  if (!pw.split('').some(c => CHARS.upper.includes(c))) {
+    pw = pw.slice(0, -1) + pick(CHARS.upper);
+  }
+  if (!pw.split('').some(c => CHARS.lower.includes(c))) {
+    pw = pw.slice(0, -1) + pick(CHARS.lower);
+  }
+  if (!pw.split('').some(c => CHARS.digits.includes(c))) {
+    pw = pw.slice(0, -1) + pick(CHARS.digits);
+  }
+  return pw;
+}
+
+function entropyAlphanumeric(length) {
+  const poolSize = CHARS.upper.length + CHARS.lower.length + CHARS.digits.length;
+  return length * Math.log2(poolSize);
+}
+
+// --- PIN ---
+function generatePin(digits) {
+  let pin = '';
+  for (let i = 0; i < digits; i++) pin += randInt(0, 9).toString();
+  return pin;
+}
+
+function entropyPin(digits) { return digits * Math.log2(10); }
+
+// --- Pronounceable ---
+function generatePronounceable(pattern, repeats) {
+  const full = pattern.repeat(repeats);
+  let pw = '';
+  for (const ch of full) {
+    if (ch === 'C') pw += pick(CONSONANTS);
+    else if (ch === 'V') pw += pick(VOWELS);
+  }
+  return pw;
+}
+
+function entropyPronounceable(pattern, repeats) {
+  const cCount = (pattern.repeat(repeats).match(/C/g) || []).length;
+  const vCount = (pattern.repeat(repeats).match(/V/g) || []).length;
+  return cCount * Math.log2(CONSONANTS.length) + vCount * Math.log2(VOWELS.length);
+}
+
+// --- Strength meter ---
+function getStrengthLevel(entropy) {
+  if (entropy < 30) return { level: 'Very Weak', color: 'var(--red)', pct: Math.min(entropy / 128 * 100, 100) };
+  if (entropy < 50) return { level: 'Weak', color: 'var(--orange)', pct: entropy / 128 * 100 };
+  if (entropy < 70) return { level: 'Fair', color: 'var(--yellow)', pct: entropy / 128 * 100 };
+  if (entropy < 100) return { level: 'Strong', color: 'var(--green)', pct: entropy / 128 * 100 };
+  return { level: 'Very Strong', color: 'var(--purple)', pct: Math.min(entropy / 128 * 100, 100) };
+}
+
+function showStrength(entropy) {
+  const s = getStrengthLevel(entropy);
+  return `
+    <div class="strength-meter">
+      <div class="strength-bar"><div class="strength-fill" style="width:${s.pct}%;background:${s.color};"></div></div>
+      <div class="strength-label">
+        <span style="color:${s.color}">${s.level}</span>
+        <span class="entropy">${entropy.toFixed(1)} bits</span>
+      </div>
+    </div>`;
+}
+
+// --- Clipboard ---
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('Copied!', 'success');
+  } catch {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast('Copied!', 'success');
+  }
+}
+
+// --- Toast ---
+function toast(msg, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 2500);
+}
+
+// ============================================================
+// VAULT (sessionStorage)
+// ============================================================
+
+let vault = [];
+const STORAGE_KEY = 'pwvault_entries';
+const SALT_KEY = 'pwvault_salt';
+
+function loadVault() {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    vault = raw ? JSON.parse(raw) : [];
+  } catch { vault = []; }
+  renderVault();
+}
+
+function saveVault() {
+  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(vault));
+  renderVault();
+}
+
+function addToVault(site, username, password) {
+  if (!site.trim() || !password.trim()) { toast('Site and password required', 'error'); return; }
+  vault.push({
+    id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2),
+    site: site.trim(),
+    username: username.trim(),
+    password: password,
+    created: new Date().toISOString()
+  });
+  saveVault();
+  toast(`Saved ${site}`, 'success');
+}
+
+function removeFromVault(id) {
+  vault = vault.filter(e => e.id !== id);
+  saveVault();
+}
+
+function clearVault() {
+  if (vault.length === 0) return;
+  if (confirm('Are you sure you want to clear ALL vault entries? This cannot be undone.')) {
+    vault = [];
+    saveVault();
+    toast('Vault cleared', 'info');
+  }
+}
+
+function renderVault(filter = '') {
+  const container = document.getElementById('vault-content');
+  const countEl = document.getElementById('vault-count');
+  const search = (filter || document.getElementById('vault-search').value || '').toLowerCase();
+  const filtered = search ? vault.filter(e =>
+    e.site.toLowerCase().includes(search) ||
+    e.username.toLowerCase().includes(search)
+  ) : vault;
+
+  countEl.textContent = vault.length ? `(${vault.length})` : '';
+
+  if (vault.length === 0) {
+    container.innerHTML = `<div class="vault-empty"><div style="font-size:2rem;margin-bottom:8px;">🔐</div><strong>Your vault is empty</strong><p>Generate passwords and save them, or add entries manually.</p></div>`;
+    return;
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="vault-empty"><div style="font-size:2rem;margin-bottom:8px;">🔍</div><strong>No matching entries</strong><p>Try a different search term.</p></div>`;
+    return;
+  }
+
+  let html = `<table class="vault-table"><thead><tr><th>Site</th><th>Username</th><th>Password</th><th class="actions-cell">Actions</th></tr></thead><tbody>`;
+  for (const entry of filtered) {
+    html += `<tr>
+      <td><strong>${escHtml(entry.site)}</strong></td>
+      <td>${escHtml(entry.username || '—')}</td>
+      <td class="pw-cell" data-full="${escAttr(entry.password)}">${escHtml(maskPassword(entry.password))}</td>
+      <td class="actions-cell">
+        <button class="btn btn-sm" onclick="revealPassword('${entry.id}')" title="Reveal">👁</button>
+        <button class="btn btn-sm" onclick="copyPassword('${entry.id}')" title="Copy">📋</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteEntry('${entry.id}')" title="Delete">🗑</button>
+      </td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function maskPassword(pw) { return '•'.repeat(Math.min(pw.length, 20)); }
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+function escAttr(s) { return s.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+// These are global for onclick
+window.deleteEntry = function(id) {
+  removeFromVault(id);
+};
+window.copyPassword = function(id) {
+  const entry = vault.find(e => e.id === id);
+  if (entry) copyToClipboard(entry.password);
+};
+window.revealPassword = function(id) {
+  const entry = vault.find(e => e.id === id);
+  if (!entry) return;
+  const cell = document.querySelector(`.pw-cell[data-full="${escAttr(entry.password)}"]`);
+  if (cell) {
+    if (cell.textContent === maskPassword(entry.password)) {
+      cell.textContent = entry.password;
+    } else {
+      cell.textContent = maskPassword(entry.password);
+    }
+  }
+};
+
+// ============================================================
+// BREACH CHECK (HaveIBeenPwned k-anonymity API)
+// ============================================================
+
+async function sha1Hex(str) {
+  const enc = new TextEncoder().encode(str);
+  const buf = await crypto.subtle.digest('SHA-1', enc);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+
+async function checkBreach(password) {
+  const hash = await sha1Hex(password);
+  const prefix = hash.slice(0, 5);
+  const suffix = hash.slice(5);
+  const url = `https://api.pwnedpasswords.com/range/${prefix}`;
+
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`HIBP API error: ${response.status}`);
+
+  const text = await response.text();
+  const lines = text.split('\n');
+  for (const line of lines) {
+    const [suf, count] = line.trim().split(':');
+    if (suf === suffix) return parseInt(count, 10);
+  }
+  return 0;
+}
+
+window.runBreachCheck = async function(password) {
+  const resultEl = document.getElementById('breach-result');
+  resultEl.innerHTML = '<span class="breach-loading">🔍 Checking HaveIBeenPwned (k-anonymity)...</span>';
+  resultEl.style.display = 'block';
+  try {
+    const count = await checkBreach(password);
+    if (count > 0) {
+      resultEl.innerHTML = `<span class="breach-compromised">⚠ Password found in ${count.toLocaleString()} breach(es)! Do not reuse this password.</span>`;
+    } else {
+      resultEl.innerHTML = `<span class="breach-safe">✅ No known breaches for this password.`;
+    }
+  } catch (err) {
+    resultEl.innerHTML = `<span class="breach-error">⚠ Breach check failed: ${err.message}</span>`;
+  }
+};
+
+// ============================================================
+// ENCRYPTED EXPORT (AES-GCM)
+// ============================================================
+
+async function deriveKey(passphrase, salt) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 600000, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+async function exportVault(passphrase) {
+  if (!passphrase) { toast('Enter a passphrase', 'error'); return; }
+  if (vault.length === 0) { toast('Vault is empty — nothing to export', 'error'); return; }
+
+  try {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const key = await deriveKey(passphrase, salt);
+
+    const plaintext = JSON.stringify({ entries: vault, exported: new Date().toISOString(), version: 1 });
+    const enc = new TextEncoder();
+    const ciphertext = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      enc.encode(plaintext)
+    );
+
+    // Pack as base64: salt(16) + iv(12) + ciphertext
+    const combined = new Uint8Array(salt.length + iv.length + ciphertext.byteLength);
+    combined.set(salt, 0);
+    combined.set(iv, salt.length);
+    combined.set(new Uint8Array(ciphertext), salt.length + iv.length);
+
+    // Convert to base64
+    const binary = String.fromCharCode(...combined);
+    const b64 = btoa(binary);
+    const blob = `PWVAULT1:${b64}`;
+
+    document.getElementById('export-output').value = blob;
+    toast('Vault encrypted and exported', 'success');
+  } catch (err) {
+    toast('Export failed: ' + err.message, 'error');
+  }
+}
+
+async function importVault(blob, passphrase) {
+  if (!blob || !passphrase) { toast('Both blob and passphrase are required', 'error'); return; }
+
+  try {
+    if (!blob.startsWith('PWVAULT1:')) throw new Error('Invalid blob format');
+    const b64 = blob.slice(9);
+    const binary = atob(b64);
+    const combined = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) combined[i] = binary.charCodeAt(i);
+
+    const salt = combined.slice(0, 16);
+    const iv = combined.slice(16, 28);
+    const ciphertext = combined.slice(28);
+
+    const key = await deriveKey(passphrase, salt);
+    const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
+
+    const data = JSON.parse(new TextDecoder().decode(decrypted));
+    if (!data.entries || !Array.isArray(data.entries)) throw new Error('Invalid vault data');
+
+    // Merge entries (append, not replace)
+    const existing = vault.length;
+    vault = vault.concat(data.entries.map(e => ({
+      ...e,
+      id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)
+    })));
+    saveVault();
+    toast(`Imported ${data.entries.length} entries (had ${existing})`, 'success');
+  } catch (err) {
+    toast('Import failed: ' + err.message, 'error');
+  }
+}
+
+// ============================================================
+// UI SETUP
+// ============================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadVault();
+
+  // --- Tab switching ---
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  // --- Type-dependent options ---
+  const genType = document.getElementById('gen-type');
+  genType.addEventListener('change', () => {
+    document.getElementById('xkcd-options').style.display = genType.value === 'xkcd' ? 'flex' : 'none';
+    document.getElementById('pronounce-options').style.display = genType.value === 'pronounceable' ? 'flex' : 'none';
+    document.getElementById('pin-options').style.display = genType.value === 'pin' ? 'flex' : 'none';
+  });
+  genType.dispatchEvent(new Event('change'));
+
+  // --- Generate ---
+  document.getElementById('btn-generate').addEventListener('click', generatePasswords);
+  document.getElementById('btn-copy-all').addEventListener('click', () => {
+    const pwEls = document.querySelectorAll('#generated-list .password-display .pw-text');
+    if (pwEls.length === 0) { toast('Nothing to copy', 'error'); return; }
+    const all = Array.from(pwEls).map(el => el.textContent).join('\n');
+    copyToClipboard(all);
+  });
+  document.getElementById('btn-save-to-vault').addEventListener('click', () => {
+    const pwEls = document.querySelectorAll('#generated-list .password-display .pw-text');
+    if (pwEls.length === 0) { toast('Nothing to save', 'error'); return; }
+    pwEls.forEach((el, i) => {
+      const pw = el.textContent;
+      if (pw) addToVault(`Generated #${i + 1}`, '', pw);
+    });
+    switchTab('vault');
+  });
+
+  // --- Manual add ---
+  document.getElementById('manual-add').addEventListener('click', () => {
+    const site = document.getElementById('manual-site').value;
+    const username = document.getElementById('manual-username').value;
+    const password = document.getElementById('manual-password').value;
+    addToVault(site, username, password);
+    document.getElementById('manual-site').value = '';
+    document.getElementById('manual-username').value = '';
+    document.getElementById('manual-password').value = '';
+  });
+
+  // --- Vault controls ---
+  document.getElementById('vault-search').addEventListener('input', (e) => renderVault(e.target.value));
+  document.getElementById('vault-clear-filter').addEventListener('click', () => {
+    document.getElementById('vault-search').value = '';
+    renderVault();
+  });
+  document.getElementById('vault-clear-all').addEventListener('click', clearVault);
+
+  // --- Export ---
+  document.getElementById('btn-export').addEventListener('click', () => {
+    exportVault(document.getElementById('export-passphrase').value);
+  });
+  document.getElementById('btn-copy-export').addEventListener('click', () => {
+    const blob = document.getElementById('export-output').value;
+    if (blob) copyToClipboard(blob);
+    else toast('Nothing to copy', 'error');
+  });
+
+  // --- Import ---
+  document.getElementById('btn-import').addEventListener('click', () => {
+    importVault(
+      document.getElementById('import-input').value,
+      document.getElementById('import-passphrase').value
+    );
+    document.getElementById('import-input').value = '';
+    document.getElementById('import-passphrase').value = '';
+  });
+
+  // Enter key support
+  document.getElementById('manual-password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('manual-add').click();
+  });
+  document.getElementById('export-passphrase').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('btn-export').click();
+  });
+  document.getElementById('import-passphrase').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('btn-import').click();
+  });
+});
+
+function switchTab(name) {
+  const btn = document.querySelector(`.tab-btn[data-tab="${name}"]`);
+  if (btn) btn.click();
+}
+
+function generatePasswords() {
+  const type = document.getElementById('gen-type').value;
+  const count = parseInt(document.getElementById('gen-count').value) || 1;
+  const length = parseInt(document.getElementById('gen-length').value) || 16;
+  const listEl = document.getElementById('generated-list');
+  const strengthEl = document.getElementById('strength-detail');
+
+  const pws = [];
+  let totalEntropy = 0;
+
+  for (let i = 0; i < count; i++) {
+    let pw, entropy;
+    switch (type) {
+      case 'xkcd': {
+        const words = parseInt(document.getElementById('xkcd-words').value) || 4;
+        const sep = document.getElementById('xkcd-sep').value;
+        const cap = document.getElementById('xkcd-capitalize').checked;
+        const num = document.getElementById('xkcd-number').checked;
+        pw = generateXkcd(words, sep, cap, num);
+        entropy = entropyXkcd(words, cap, num);
+        break;
+      }
+      case 'alphanumeric': {
+        pw = generateAlphanumeric(length);
+        entropy = entropyAlphanumeric(pw.length);
+        break;
+      }
+      case 'pin': {
+        const digits = parseInt(document.getElementById('pin-digits').value) || 6;
+        pw = generatePin(digits);
+        entropy = entropyPin(pw.length);
+        break;
+      }
+      case 'pronounceable': {
+        const pattern = document.getElementById('pron-pattern').value;
+        const repeats = parseInt(document.getElementById('pron-repeats').value) || 2;
+        pw = generatePronounceable(pattern, repeats);
+        entropy = entropyPronounceable(pattern, repeats);
+        break;
+      }
+    }
+    pws.push({ pw, entropy });
+    totalEntropy += entropy;
+  }
+
+  // Render passwords
+  let html = '';
+  for (const { pw, entropy } of pws) {
+    const s = getStrengthLevel(entropy);
+    html += `
+      <div class="password-display" style="margin-bottom:8px;">
+        <span class="pw-text">${escHtml(pw)}</span>
+        <span class="pw-actions">
+          <button class="btn btn-sm" onclick="copyToClipboard('${escAttr(pw)}')" title="Copy">📋</button>
+          <button class="btn btn-sm" onclick="checkBreachFor('${escAttr(pw)}')" title="Breach Check">🔍</button>
+        </span>
+      </div>
+      <div class="strength-meter" style="margin-bottom:12px;padding-left:0;">
+        <div class="strength-bar"><div class="strength-fill" style="width:${s.pct}%;background:${s.color};"></div></div>
+        <div class="strength-label">
+          <span style="color:${s.color}">${s.level}</span>
+          <span class="entropy">${entropy.toFixed(1)} bits</span>
+        </div>
+      </div>`;
+  }
+  listEl.innerHTML = html;
+
+  // Summary
+  const avg = totalEntropy / pws.length;
+  const s = getStrengthLevel(avg);
+  strengthEl.innerHTML = `
+    <div class="strength-meter" style="border-top:1px solid var(--border);padding-top:12px;">
+      <div style="font-size:0.85rem;color:var(--txt2);margin-bottom:4px;">Average Strength</div>
+      <div class="strength-bar"><div class="strength-fill" style="width:${s.pct}%;background:${s.color};"></div></div>
+      <div class="strength-label">
+        <span style="color:${s.color}">${s.level}</span>
+        <span class="entropy">${avg.toFixed(1)} bits avg (${pws.length} password${pws.length > 1 ? 's' : ''})</span>
+      </div>
+    </div>`;
+}
+
+// Global for onclick breach check
+window.checkBreachFor = function(password) {
+  switchTab('vault');
+  // Add a breach check section in the vault
+  const container = document.getElementById('vault-content');
+  const resultDiv = document.createElement('div');
+  resultDiv.id = 'breach-result';
+  resultDiv.style.marginTop = '12px';
+  resultDiv.style.marginBottom = '12px';
+  // Check if there's already a breach result
+  const existing = document.getElementById('breach-result');
+  if (existing) existing.remove();
+
+  const header = document.createElement('div');
+  header.style.cssText = 'margin-bottom:12px;';
+  header.innerHTML = `<div class="card" style="margin-bottom:0;"><div class="card-title">Breach Check</div>`;
+  const inner = document.createElement('div');
+  inner.id = 'breach-result';
+  inner.innerHTML = `<span class="breach-loading">🔍 Checking HaveIBeenPwned (k-anonymity)...</span>`;
+  header.querySelector('.card').appendChild(inner);
+  header.querySelector('.card').innerHTML += `</div>`;
+
+  if (container.firstChild) {
+    container.insertBefore(header, container.firstChild);
+  } else {
+    container.appendChild(header);
+  }
+
+  // Scroll to it
+  header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Actually do the check (from the exposed function)
+  checkBreach(password).then(count => {
+    const resultEl = document.getElementById('breach-result');
+    if (count > 0) {
+      resultEl.innerHTML = `<span class="breach-compromised">⚠ Password found in ${count.toLocaleString()} breach(es)! Do not reuse this password.</span>`;
+    } else {
+      resultEl.innerHTML = `<span class="breach-safe">✅ No known breaches for this password.`;
+    }
+  }).catch(err => {
+    const resultEl = document.getElementById('breach-result');
+    resultEl.innerHTML = `<span class="breach-error">⚠ Breach check failed: ${err.message}</span>`;
+  });
+};
+</script>
+</body>
+</html>
