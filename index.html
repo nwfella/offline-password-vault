@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Offline Password Vault 🔐</title>
-<meta name="description" content="A paranoid's password manager that never touches a network — generate, vault, encrypt, and check breaches entirely in-browser.">
+<meta name="description" content="A paranoid's password manager — generate, vault, encrypt, and check breaches entirely in-browser with zero dependencies.">
 <style>
   :root {
     --bg: #0d1117;
@@ -291,6 +291,18 @@
   /* Pronounceable pattern builder */
   .pattern-demo { font-family: var(--mono); font-size: 0.8rem; color: var(--txt2); margin-top: 4px; }
 
+  /* Security advisory callout */
+  .advisory {
+    background: rgba(248,81,73,0.08);
+    border: 1px solid rgba(248,81,73,0.3);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    color: var(--txt2);
+    margin-bottom: 12px;
+  }
+  .advisory strong { color: var(--orange); }
+
   /* Responsive */
   @media (max-width: 600px) {
     header { flex-direction: column; align-items: flex-start; }
@@ -313,33 +325,12 @@
   /* Checkbox toggle */
   .toggle-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
   .toggle-row label { margin-bottom: 0; cursor: pointer; }
-
-  /* Modal overlay for import */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9998;
-  }
-  .modal {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 24px;
-    max-width: 400px;
-    width: 90%;
-  }
-  .modal h3 { margin-bottom: 12px; }
-  .modal .btn-group { margin-top: 16px; justify-content: flex-end; }
 </style>
 </head>
 <body>
 <header>
   <h1>🔐 Offline Password Vault <span>+ Generator</span></h1>
-  <div class="tagline">Zero-server. Zero-tracking. Zero-compromise.</div>
+  <div class="tagline">Core features work offline. Zero tracking. Zero compromise.</div>
 </header>
 
 <div class="container">
@@ -517,6 +508,16 @@
         <a href="https://haveibeenpwned.com/API/v3#SearchingPwnedPasswordsByRange" target="_blank" style="color:var(--accent);">HIBP k-anonymity API</a>
         for breach checks (only the first 5 hex chars of your password hash are sent).
       </p>
+
+      <div class="advisory">
+        <strong>⚠ Security Advisory:</strong> This tool runs entirely in your browser.
+        Any installed browser extension with <code>&lt;all_urls&gt;</code> or storage permissions
+        can read <code>sessionStorage</code> in plaintext. For maximum security, open this page
+        in a private/incognito window with <strong>all extensions disabled</strong>.
+        Data in browser memory may persist until the OS reclaims it — JavaScript cannot securely
+        zero memory.
+      </div>
+
       <h3 style="font-size:0.95rem;margin-bottom:8px;margin-top:16px;">Features</h3>
       <ul style="font-size:0.85rem;color:var(--txt2);padding-left:20px;line-height:2;">
         <li><strong>Password generation</strong> — XKCD-style word phrases, random alphanumeric, PINs, pronounceable passwords</li>
@@ -530,7 +531,8 @@
       <h3 style="font-size:0.95rem;margin-bottom:8px;margin-top:16px;">Entropy Model</h3>
       <p style="font-size:0.85rem;color:var(--txt2);">
         Entropy is calculated as H = log₂(N<sup>L</sup>) where N is the character set size and L is the length.
-        For XKCD phrases it's H = L<sub>words</sub> × log₂(dictionary_size). The meter thresholds:
+        For XKCD phrases it's H = L<sub>words</sub> × log₂(dictionary_size). All random values are generated
+        via <code>crypto.getRandomValues()</code> with rejection sampling to ensure uniform distribution. The meter thresholds:
         <span style="color:var(--red);">&lt;30 bits</span> ·
         <span style="color:var(--orange);">30–50</span> ·
         <span style="color:var(--yellow);">50–70</span> ·
@@ -547,7 +549,7 @@
 </div>
 
 <footer>
-  Offline Password Vault &bull; Zero-server &bull; <a href="https://github.com/nwfella/offline-password-vault" target="_blank">GitHub</a>
+  Offline Password Vault &bull; <a href="https://github.com/nwfella/offline-password-vault" target="_blank">GitHub</a>
 </footer>
 
 <div class="toast-container" id="toast-container"></div>
@@ -557,7 +559,7 @@
 // WORD LIST (1000 common English words for XKCD-style phrases)
 // ============================================================
 const WORDS = [
-"ability","able","aboard","about","above","accept","accident","account","achieve","across","act","action","active","activity","actual","add","address","admit","adopt","adult","advance","advantage","adventure","advice","affair","affect","afford","afraid","after","afternoon","again","against","age","agency","agent","agree","ahead","aid","aim","air","airport","alive","all","allow","almost","alone","along","already","also","alter","always","amount","ancient","anger","angle","animal","announce","annual","another","answer","any","apart","appear","apple","apply","appoint","approve","area","argue","arise","arm","army","around","arrange","arrest","arrive","arrow","art","article","ask","aspect","assault","asset","assist","assume","attack","attempt","attend","attract","author","authority","auto","available","average","avoid","award","aware","away","baby","back","background","bad","bag","balance","ball","band","bank","bar","barely","barrel","base","basic","basket","battle","beach","bean","bear","beat","beauty","become","bed","bedroom","beer","before","begin","behavior","behind","believe","bell","belong","below","belt","bench","bend","benefit","best","better","beyond","bicycle","big","bill","bind","bird","birth","bit","bite","black","blade","blame","blank","blast","bleed","blend","bless","blind","block","blood","blow","blue","board","boat","body","bold","bomb","bone","book","boost","border","born","borrow","boss","both","bother","bottle","bottom","bounce","box","boy","brain","branch","brass","brave","bread","break","breath","breed","brick","bridge","brief","bright","bring","broad","broken","brother","brown","brush","bubble","budget","build","bullet","bunch","burden","burn","burst","bus","business","busy","button","buy","cabinet","cable","cake","calculate","call","calm","camera","camp","campaign","can","cancel","candle","capable","capital","captain","capture","carbon","care","career","careful","cargo","carry","case","cash","cast","catch","category","cattle","cause","ceiling","cell","center","central","century","chain","chair","chamber","champion","chance","change","channel","chapter","charge","charity","chart","chase","cheap","check","cheese","chest","chicken","chief","child","chip","choice","choose","church","circle","citizen","city","civil","claim","class","classic","classroom","clean","clear","clerk","clever","click","client","climate","climb","clock","close","closure","cloth","clothes","cloud","club","clue","cluster","coach","coal","coast","code","coffee","coin","collapse","colleague","collect","college","color","column","combine","come","comfort","command","comment","commerce","commit","common","communicate","community","company","compare","compete","complex","computer","concern","condition","conduct","conference","confirm","conflict","confuse","connect","conscious","consequence","consider","consist","constant","construct","consult","consume","contact","contain","content","contest","context","contract","contrast","contribute","control","convention","conversation","convert","convince","cook","cookie","cool","cooperate","cope","copy","core","corner","correct","cost","cotton","couch","could","council","count","counter","country","county","couple","courage","course","court","cousin","cover","crack","craft","crash","crazy","cream","create","creative","credit","crew","crime","crisis","criteria","critical","crop","cross","crowd","crucial","culture","cup","cure","curious","current","curtain","curve","custom","customer","cut","cycle","dad","damage","dance","danger","dare","dark","data","database","date","daughter","dawn","day","dead","deal","dear","death","debate","debt","decade","decide","decision","deck","declare","decline","deep","deer","defeat","defend","define","defy","degree","delay","deliver","demand","deny","depart","depend","deposit","depress","depth","deputy","derive","describe","desert","design","desk","desperate","despite","destroy","detail","detect","develop","device","devote","dialogue","diamond","diet","differ","difficult","digest","digital","dinner","direct","dirt","disable","disagree","disappear","disaster","discipline","discount","discover","discuss","disease","dismiss","display","dispute","distance","distinct","distribute","district","disturb","dive","divide","division","doctor","document","dog","dollar","domain","door","double","doubt","down","downtown","dozen","draft","drag","drain","drama","dramatic","draw","drawer","dream","dress","drift","drink","drive","drop","drought","drug","dry","due","during","dust","duty","dynamic","each","eager","ear","early","earn","earth","ease","east","eastern","easy","eat","echo","economy","edge","edition","editor","educate","education","effect","effective","effort","eight","either","elbow","elder","elect","election","element","elephant","elite","else","emerge","emotion","emperor","employ","employee","employer","empty","enable","encounter","encourage","end","enemy","energy","enforce","engage","engine","engineer","enhance","enjoy","enormous","enough","ensure","enter","enterprise","entertain","entire","entry","envelope","environment","episode","equal","equipment","era","error","escape","especially","essay","essential","establish","estate","estimate","evaluate","even","evening","event","eventually","ever","every","evidence","evil","exact","examine","example","exceed","excellent","except","exchange","excite","excuse","execute","exercise","exhibit","exist","existing","expand","expect","expense","expensive","experience","experiment","expert","explain","explore","export","expose","express","extend","extent","external","extra","extreme","eye","fabric","face","facility","fact","factor","factory","faculty","fade","fail","failure","fair","fairly","faith","fall","familiar","family","fan","fantasy","far","farm","fashion","fast","fasten","fat","fate","father","fault","favor","favorite","fear","feature","federal","feed","feel","fellow","female","fence","few","fiber","fiction","field","fierce","fifteen","fight","figure","file","fill","film","final","finance","find","fine","finger","finish","fire","firm","first","fish","fit","five","fix","flag","flame","flash","flat","flavor","flee","flesh","flight","flip","float","flood","floor","flow","flower","fluid","fly","focus","folk","follow","food","foot","football","for","force","foreign","forest","forever","forget","form","formal","former","formula","fortune","forward","foundation","founder","four","frame","framework","free","freedom","freeze","french","frequency","frequent","fresh","friend","friendly","frog","front","fruit","fuel","full","fun","function","fund","funny","future","gain","galaxy","gallery","game","gang","gap","garage","garbage","garden","gas","gate","gather","gaze","gear","gender","gene","general","generate","generation","generous","genetic","genius","gentle","genuine","gesture","get","ghost","giant","gift","gifted","girl","give","glad","glance","glass","global","glove","glow","goal","gold","golden","good","govern","government","grab","grace","grade","gradually","grain","grand","grandfather","grant","graph","grass","grateful","grave","great","green","greet","ground","group","grow","growth","guarantee","guard","guess","guest","guide","guilty","guitar","gun","gut","guy","habit","hair","half","hall","hand","handle","hang","happen","happy","harbor","hard","hardly","harm","hat","hate","have","head","headline","health","hear","heart","heat","heaven","heavy","height","hello","help","hence","herb","here","heritage","hero","hide","high","highlight","highway","hill","him","hip","hire","historian","history","hit","hold","hole","holiday","hollow","home","honest","honor","hook","hope","horizon","horror","horse","hospital","host","hotel","hour","house","housing","human","humor","hundred","hunt","hunter","hurt","husband","hypothesis","ice","icon","idea","identify","ignore","illegal","image","imagine","immediate","immense","immune","impact","implement","imply","import","importance","impose","improve","impulse","incentive","inch","incident","include","income","increase","incredible","indeed","indicate","indirect","individual","industry","infant","inflation","influence","inform","initial","initiative","injury","inner","innocent","innovation","input","inquiry","insect","inside","insight","inspect","inspire","install","instance","instant","instead","institute","instruction","instrument","insurance","intact","integrate","intellectual","intelligence","intend","intense","intention","interaction","interest","internal","international","internet","interpret","interview","into","introduce","invade","invent","invest","investigate","investor","invite","iron","island","isolate","issue","item","itself","jacket","jail","jam","jet","jewel","job","join","joint","joke","journal","journalist","journey","joy","judge","judgment","juice","jump","junction","junior","jury","justice","justify","keen","keep","key","kick","kid","kill","kind","king","kiss","kitchen","knee","knife","knock","know","knowledge","label","labor","lab","lack","ladder","lady","lake","land","landscape","lane","language","large","largely","laser","last","late","later","latter","laugh","launch","law","layer","lazy","lead","leader","leaf","league","lean","leap","learn","least","leather","leave","lecture","left","leg","legal","lemon","lend","length","lesson","let","letter","level","library","license","lid","life","lift","light","like","likely","limit","line","link","lion","lip","liquid","list","listen","literature","little","live","load","loan","local","locate","lock","lodge","logical","lonely","long","look","lord","lose","loss","lost","lot","loud","love","lovely","lover","low","lower","loyal","luck","lucky","lunch","lung","machine","mad","magazine","magic","magnet","magnificent","main","maintain","major","majority","make","maker","male","manage","manager","manner","manufacture","many","map","march","margin","mark","market","marriage","married","marry","mask","mass","massive","master","match","material","matter","mature","maximum","maybe","mayor","meal","mean","measure","meat","mechanic","media","medicine","medium","meet","meeting","member","membership","memory","mental","mention","menu","merchant","mercy","merely","merge","merit","mess","message","metal","method","middle","midnight","might","mild","mile","military","milk","mill","million","mind","mine","minister","minor","minority","minute","miracle","mirror","missile","mission","mistake","mix","mixture","mobile","mode","model","moderate","modern","modest","modify","moment","monitor","month","moon","moral","more","moreover","morning","mortgage","most","mostly","mother","motion","motor","mountain","mouth","move","movement","movie","much","multiple","murder","muscle","museum","music","musical","musician","mutual","mystery","myth","narrow","nation","national","native","natural","nature","navy","near","nearby","nearly","neat","necessary","neck","need","negative","negotiate","neighbor","neither","nerve","network","neutral","never","nevertheless","new","news","newspaper","next","nice","night","nine","noble","nobody","nod","noise","nominate","none","nonetheless","normal","normally","north","northern","nose","notable","note","nothing","notice","notion","novel","now","nowhere","nuclear","number","numerous","nurse","nut","object","objective","obligation","observe","obtain","obvious","occasion","occupy","occur","ocean","odd","off","offense","offer","office","officer","official","often","oil","okay","old","olympic","onion","online","only","open","operate","operation","operator","opinion","opponent","opportunity","oppose","opposite","option","orange","orbit","order","ordinary","organ","organize","orientation","origin","original","other","otherwise","ought","outcome","outlet","outline","output","outside","outsider","oven","over","overall","overcome","overlook","owe","own","owner","pace","pack","package","page","pain","paint","painting","pair","palace","palm","pan","panel","panic","paper","parent","park","parliament","part","participant","particular","partly","partner","party","pass","passage","passenger","passion","past","path","patient","patrol","pattern","pause","pay","payment","peace","peak","peasant","penalty","people","pepper","perfect","perform","performance","perhaps","period","permanent","permission","permit","person","personal","personality","perspective","persuade","pet","phase","phenomenon","philosophy","phone","photo","photograph","phrase","physical","physically","physician","piano","pick","picture","piece","pile","pilot","pin","pink","pioneer","pipe","pitch","pizza","place","plain","plan","plane","planet","plant","plate","platform","play","player","please","pleasure","plenty","plot","plug","plus","pocket","poem","poet","poetry","point","pole","police","policy","political","politician","politics","poll","pollution","pool","poor","pop","popular","population","porch","port","portion","portrait","pose","position","positive","possess","possibility","possible","possibly","post","pot","potato","potential","pound","pour","poverty","powder","power","powerful","practical","practice","pray","prayer","precisely","predict","prefer","preference","pregnancy","pregnant","premise","premium","prepare","presence","present","preserve","president","press","pressure","presume","pretend","pretty","prevail","prevent","previous","price","pride","priest","primarily","primary","prime","principal","principle","print","prior","priority","prison","prisoner","privacy","private","probably","problem","procedure","proceed","process","produce","product","production","profession","professional","professor","profit","program","progress","project","promise","promote","prompt","proof","proper","property","proportion","proposal","propose","prospect","protect","protection","protein","protest","proud","prove","provide","provider","province","provision","provoke","psychology","public","publication","publicity","publish","pull","pump","punch","punish","purchase","pure","purpose","pursue","push","put","puzzle","qualify","quality","quantity","quarter","queen","question","quick","quickly","quiet","quietly","quit","quite","quote","race","radical","radio","rage","rail","rain","raise","range","rank","rapid","rare","rarely","rate","rather","rating","ratio","raw","reach","react","reaction","read","reader","reading","ready","real","reality","realize","really","reason","reasonable","recall","receive","recent","recipe","reckon","recognition","recognize","recommend","record","recover","recruit","red","reduce","reduction","refer","reference","reflect","reform","refresh","refugee","refuse","regard","regime","region","register","regret","regular","regulate","reject","relate","relation","relationship","relative","relax","release","relevant","relief","religion","religious","rely","remain","remark","remedy","remember","remind","remote","remove","render","rent","repair","repeat","replace","reply","report","represent","republic","reputation","request","require","requirement","research","reserve","reside","resident","resign","resist","resolution","resolve","resort","resource","respect","respond","response","responsibility","responsible","rest","restaurant","restore","restrict","result","retain","retire","retreat","return","reveal","revenue","reverse","review","revolution","reward","rhythm","rich","ride","rifle","right","ring","riot","rip","rise","risk","ritual","rival","river","road","rock","rocket","role","roll","romantic","roof","room","root","rope","rough","roughly","round","route","routine","row","royal","rub","rubber","ruin","rule","ruler","run","runaway","running","rural","rush","sacred","sacrifice","sad","safe","safety","sail","sake","salad","salary","sale","salt","salvation","sample","sanction","sand","satellite","satisfaction","satisfy","save","saving","scale","scandal","scatter","scene","schedule","scheme","scholar","scholarship","school","science","scientist","scope","score","scream","screen","script","seal","search","season","seat","second","secret","secretary","section","sector","secure","security","see","seed","seek","select","selection","self","sell","senate","senator","send","senior","sense","sensitive","sentence","separate","sequence","series","serious","serve","service","session","set","settle","settlement","setup","seven","several","severe","shade","shadow","shake","shall","shape","share","sharp","shed","sheet","shelf","shell","shelter","shield","shift","shine","ship","shirt","shock","shoe","shoot","shop","shopping","shore","short","shortly","shot","should","shoulder","shout","show","shower","shrug","shut","sick","side","sight","sign","signal","significant","silence","silent","silk","silly","silver","similar","simple","simply","simulate","single","sister","sit","site","situation","size","skill","skin","skirt","sky","slave","sleep","slice","slide","slight","slip","slope","slow","slowly","small","smart","smell","smile","smoke","smooth","snap","snow","so-called","social","society","soft","software","soil","solar","soldier","solid","solution","solve","some","somebody","somehow","someone","something","sometimes","somewhat","son","song","soon","sophisticated","sorry","sort","soul","sound","source","south","southern","space","span","speak","speaker","special","specialist","species","specific","speech","speed","spell","spend","sphere","spill","spin","spirit","spiritual","split","spoke","sponsor","spoon","sport","spot","spray","spread","spring","square","squeeze","stable","staff","stage","stair","stake","stand","standard","standing","star","stare","start","state","statement","station","statistics","status","stay","steady","steal","steam","steel","steep","steer","stem","step","stick","stiff","still","stock","stomach","stone","stop","storage","store","storm","story","straight","strain","strange","stranger","strategy","stream","street","strength","stress","stretch","strike","string","strip","stroke","strong","structure","struggle","student","studio","study","stuff","stupid","style","subject","submit","subsequent","substance","substitute","suburb","succeed","success","successful","such","suck","sudden","suddenly","suffer","sufficient","sugar","suggest","suggestion","suicide","suit","summer","summit","sun","super","supply","support","suppose","supreme","sure","surely","surface","surgery","surprise","surrender","surround","survey","survival","survive","survivor","suspect","suspend","sustain","swallow","swear","sweep","sweet","swim","swing","switch","symbol","sympathy","symptom","system","table","tackle","tactic","tail","take","tale","talent","talk","tall","tank","tape","target","task","taste","tax","teach","teacher","teaching","team","tear","technical","technique","technology","tell","temperature","temple","temporary","tenant","tend","tendency","tender","tennis","tension","term","terms","terrain","terrible","territory","terror","test","text","than","thank","thanks","that","theater","theft","theme","then","theory","therapy","there","therefore","they","thick","thin","thing","think","thinking","third","thirty","this","thorough","though","thought","thousand","threat","threaten","three","throat","through","throughout","throw","thumb","thus","ticket","tie","tight","till","time","tiny","tip","tire","tired","tissue","title","today","together","tomorrow","tone","tongue","tonight","tool","tooth","top","topic","toss","total","totally","touch","tough","tour","tourist","tournament","toward","towards","tower","town","track","trade","tradition","traditional","traffic","tragedy","trail","train","training","transfer","transform","transition","translate","transport","trap","trash","travel","tray","treat","treatment","treaty","tree","tremendous","trend","trial","tribe","trick","trigger","trip","triumph","troop","trophy","trouble","truck","true","truly","trunk","trust","truth","try","tube","tumble","tune","tunnel","turn","twelve","twenty","twice","twin","twist","type","typical","ugly","ultimate","umbrella","unable","uncle","under","undergo","understand","undertake","unemployment","unfold","unfortunate","uniform","union","unique","unit","unite","unity","universal","universe","university","unknown","unless","unlike","unlikely","unusual","update","upon","upper","upset","urban","urge","use","used","useful","user","usual","utility","vacation","vacuum","valid","valley","valuable","value","variable","variation","variety","various","vary","vast","vehicle","venture","version","versus","vertical","very","vessel","veteran","via","victim","victory","video","view","village","violate","violence","violent","virtually","virtue","virus","visible","vision","visit","visitor","visual","vital","vitamin","vocal","voice","volume","volunteer","vote","vulnerable","wage","wait","walk","wall","wander","want","war","warm","warn","warning","warrant","warrior","wash","waste","watch","water","wave","way","weak","wealth","wealthy","weapon","wear","weather","web","wedding","week","weekend","weekly","weigh","weight","welcome","welfare","well","west","western","wet","whale","what","whatever","wheel","when","whenever","where","whereas","whether","which","while","whisper","white","whole","who","whoever","whom","whose","why","wide","widely","widespread","width","wife","wild","will","willing","win","wind","window","wine","wing","winner","winter","wipe","wire","wisdom","wise","wish","wit","witch","withdraw","within","without","witness","woman","wonder","wonderful","wood","wooden","word","work","worker","working","workshop","world","worldwide","worm","worry","worse","worship","worst","worth","worthy","would","wound","wrap","write","writer","writing","written","wrong","yard","yeah","year","yell","yellow","yes","yesterday","yet","yield","young","your","yourself","youth","zone"
+"ability","able","aboard","about","above","accept","accident","account","achieve","across","act","action","active","activity","actual","add","address","admit","adopt","adult","advance","advantage","adventure","advice","affair","affect","afford","afraid","after","afternoon","again","against","age","agency","agent","agree","ahead","aid","aim","air","airport","alive","all","allow","almost","alone","along","already","also","alter","always","amount","ancient","anger","angle","animal","announce","annual","another","answer","any","apart","appear","apple","apply","appoint","approve","area","argue","arise","arm","army","around","arrange","arrest","arrive","arrow","art","article","ask","aspect","assault","asset","assist","assume","attack","attempt","attend","attract","author","authority","auto","available","average","avoid","award","aware","away","baby","back","background","bad","bag","balance","ball","band","bank","bar","barely","barrel","base","basic","basket","battle","beach","bean","bear","beat","beauty","become","bed","bedroom","beer","before","begin","behavior","behind","believe","bell","belong","below","belt","bench","bend","benefit","best","better","beyond","bicycle","big","bill","bind","bird","birth","bit","bite","black","blade","blame","blank","blast","bleed","blend","bless","blind","block","blood","blow","blue","board","boat","body","bold","bomb","bone","book","boost","border","born","borrow","boss","both","bother","bottle","bottom","bounce","box","boy","brain","branch","brass","brave","bread","break","breath","breed","brick","bridge","brief","bright","bring","broad","broken","brother","brown","brush","bubble","budget","build","bullet","bunch","burden","burn","burst","bus","business","busy","button","buy","cabinet","cable","cake","calculate","call","calm","camera","camp","campaign","can","cancel","candle","capable","capital","captain","capture","carbon","care","career","careful","cargo","carry","case","cash","cast","catch","category","cattle","cause","ceiling","center","central","century","chain","chair","chamber","champion","chance","change","channel","chapter","charge","charity","chart","chase","cheap","check","cheese","chest","chicken","chief","child","chip","choice","choose","church","circle","citizen","city","civil","claim","class","classic","classroom","clean","clear","clerk","clever","click","client","climate","climb","clock","close","closure","cloth","clothes","cloud","club","clue","cluster","coach","coal","coast","code","coffee","coin","collapse","colleague","collect","college","color","column","combine","come","comfort","command","comment","commerce","commit","common","communicate","community","company","compare","compete","complex","computer","concern","condition","conduct","conference","confirm","conflict","confuse","connect","conscious","consequence","consider","consist","constant","construct","consult","consume","contact","contain","content","contest","context","contract","contrast","contribute","control","convention","conversation","convert","convince","cook","cookie","cool","cooperate","cope","copy","core","corner","correct","cost","cotton","couch","could","council","count","counter","country","county","couple","courage","course","court","cousin","cover","crack","craft","crash","crazy","cream","create","creative","credit","crew","crime","crisis","criteria","critical","crop","cross","crowd","crucial","culture","cup","cure","curious","current","curtain","curve","custom","customer","cut","cycle","dad","damage","dance","danger","dare","dark","data","database","date","daughter","dawn","day","dead","deal","dear","death","debate","debt","decade","decide","decision","deck","declare","decline","deep","deer","defeat","defend","define","defy","degree","delay","deliver","demand","deny","depart","depend","deposit","depress","depth","deputy","derive","describe","desert","design","desk","desperate","despite","destroy","detail","detect","develop","device","devote","dialogue","diamond","diet","differ","difficult","digest","digital","dinner","direct","dirt","disable","disagree","disappear","disaster","discipline","discount","discover","discuss","disease","dismiss","display","dispute","distance","distinct","distribute","district","disturb","dive","divide","division","doctor","document","dog","dollar","domain","door","double","doubt","down","downtown","dozen","draft","drag","drain","drama","dramatic","draw","drawer","dream","dress","drift","drink","drive","drop","drought","drug","dry","due","during","dust","duty","dynamic","each","eager","ear","early","earn","earth","ease","east","eastern","easy","eat","echo","economy","edge","edition","editor","educate","education","effect","effective","effort","eight","either","elbow","elder","elect","election","element","elephant","elite","else","emerge","emotion","emperor","employ","employee","employer","empty","enable","encounter","encourage","end","enemy","energy","enforce","engage","engine","engineer","enhance","enjoy","enormous","enough","ensure","enter","enterprise","entertain","entire","entry","envelope","environment","episode","equal","equipment","era","error","escape","especially","essay","essential","establish","estate","estimate","evaluate","even","evening","event","eventually","ever","every","evidence","evil","exact","examine","example","exceed","excellent","except","exchange","excite","excuse","execute","exercise","exhibit","exist","existing","expand","expect","expense","expensive","experience","experiment","expert","explain","explore","export","expose","express","extend","extent","external","extra","extreme","eye","fabric","face","facility","fact","factor","factory","faculty","fade","fail","failure","fair","fairly","faith","fall","familiar","family","fan","fantasy","far","farm","fashion","fast","fasten","fat","fate","father","fault","favor","favorite","fear","feature","federal","feed","feel","fellow","female","fence","few","fiber","fiction","field","fierce","fifteen","fight","figure","file","fill","film","final","finance","find","fine","finger","finish","fire","firm","first","fish","fit","five","fix","flag","flame","flash","flat","flavor","flee","flesh","flight","flip","float","flood","floor","flow","flower","fluid","fly","focus","folk","follow","food","foot","football","for","force","foreign","forest","forever","forget","form","formal","former","formula","fortune","forward","foundation","founder","four","frame","framework","free","freedom","freeze","french","frequency","frequent","fresh","friend","friendly","frog","front","fruit","fuel","full","fun","function","fund","funny","future","gain","galaxy","gallery","game","gang","gap","garage","garbage","garden","gas","gate","gather","gaze","gear","gender","gene","general","generate","generation","generous","genetic","genius","gentle","genuine","gesture","get","ghost","giant","gift","gifted","girl","give","glad","glance","glass","global","glove","glow","goal","gold","golden","good","govern","government","grab","grace","grade","gradually","grain","grand","grandfather","grant","graph","grass","grateful","grave","great","green","greet","ground","group","grow","growth","guarantee","guard","guess","guest","guide","guilty","guitar","gun","gut","guy","habit","hair","half","hall","hand","handle","hang","happen","happy","harbor","hard","hardly","harm","hat","hate","have","head","headline","health","hear","heart","heat","heaven","heavy","height","hello","help","hence","herb","here","heritage","hero","hide","high","highlight","highway","hill","him","hip","hire","historian","history","hit","hold","hole","holiday","hollow","home","honest","honor","hook","hope","horizon","horror","horse","hospital","host","hotel","hour","house","housing","human","humor","hundred","hunt","hunter","hurt","husband","hypothesis","ice","icon","idea","identify","ignore","illegal","image","imagine","immediate","immense","immune","impact","implement","imply","import","importance","impose","improve","impulse","incentive","inch","incident","include","income","increase","incredible","indeed","indicate","indirect","individual","industry","infant","inflation","influence","inform","initial","initiative","injury","inner","innocent","innovation","input","inquiry","insect","inside","insight","inspect","inspire","install","instance","instant","instead","institute","instruction","instrument","insurance","intact","integrate","intellectual","intelligence","intend","intense","intention","interaction","interest","internal","international","internet","interpret","interview","into","introduce","invade","invent","invest","investigate","investor","invite","iron","island","isolate","issue","item","itself","jacket","jail","jam","jet","jewel","job","join","joint","joke","journal","journalist","journey","joy","judge","judgment","juice","jump","junction","junior","jury","justice","justify","keen","keep","key","kick","kid","kill","kind","king","kiss","kitchen","knee","knife","knock","know","knowledge","label","labor","lab","lack","ladder","lady","lake","land","landscape","lane","language","large","largely","laser","last","late","later","latter","laugh","launch","law","layer","lazy","lead","leader","leaf","league","lean","leap","learn","least","leather","leave","lecture","left","leg","legal","lemon","lend","length","lesson","let","letter","level","library","license","lid","life","lift","light","like","likely","limit","line","link","lion","lip","liquid","list","listen","literature","little","live","load","loan","local","locate","lock","lodge","logical","lonely","long","look","lord","lose","loss","lost","lot","loud","love","lovely","lover","low","lower","loyal","luck","lucky","lunch","lung","machine","mad","magazine","magic","magnet","magnificent","main","maintain","major","majority","make","maker","male","manage","manager","manner","manufacture","many","map","march","margin","mark","market","marriage","married","marry","mask","mass","massive","master","match","material","matter","mature","maximum","maybe","mayor","meal","mean","measure","meat","mechanic","media","medicine","medium","meet","meeting","member","membership","memory","mental","mention","menu","merchant","mercy","merely","merge","merit","mess","message","metal","method","middle","midnight","might","mild","mile","military","milk","mill","million","mind","mine","minister","minor","minority","minute","miracle","mirror","missile","mission","mistake","mix","mixture","mobile","mode","model","moderate","modern","modest","modify","moment","monitor","month","moon","moral","more","moreover","morning","mortgage","most","mostly","mother","motion","motor","mountain","mouth","move","movement","movie","much","multiple","murder","muscle","museum","music","musical","musician","mutual","mystery","myth","narrow","nation","national","native","natural","nature","navy","near","nearby","nearly","neat","necessary","neck","need","negative","negotiate","neighbor","neither","nerve","network","neutral","never","nevertheless","new","news","newspaper","next","nice","night","nine","noble","nobody","nod","noise","nominate","none","nonetheless","normal","normally","north","northern","nose","notable","note","nothing","notice","notion","novel","now","nowhere","nuclear","number","numerous","nurse","nut","object","objective","obligation","observe","obtain","obvious","occasion","occupy","occur","ocean","odd","off","offense","offer","office","officer","official","often","oil","okay","old","olympic","onion","online","only","open","operate","operation","operator","opinion","opponent","opportunity","oppose","opposite","option","orange","orbit","order","ordinary","organ","organize","orientation","origin","original","other","otherwise","ought","outcome","outlet","outline","output","outside","outsider","oven","over","overall","overcome","overlook","owe","own","owner","pace","pack","package","page","pain","paint","painting","pair","palace","palm","pan","panel","panic","paper","parent","park","parliament","part","participant","particular","partly","partner","party","pass","passage","passenger","passion","past","path","patient","patrol","pattern","pause","pay","payment","peace","peak","peasant","penalty","people","pepper","perfect","perform","performance","perhaps","period","permanent","permission","permit","person","personal","personality","perspective","persuade","pet","phase","phenomenon","philosophy","phone","photo","photograph","phrase","physical","physically","physician","piano","pick","picture","piece","pile","pilot","pin","pink","pioneer","pipe","pitch","pizza","place","plain","plan","plane","planet","plant","plate","platform","play","player","please","pleasure","plenty","plot","plug","plus","pocket","poem","poet","poetry","point","pole","police","policy","political","politician","politics","poll","pollution","pool","poor","pop","popular","population","porch","port","portion","portrait","pose","position","positive","possess","possibility","possible","possibly","post","pot","potato","potential","pound","pour","poverty","powder","power","powerful","practical","practice","pray","prayer","precisely","predict","prefer","preference","pregnancy","pregnant","premise","premium","prepare","presence","present","preserve","president","press","pressure","presume","pretend","pretty","prevail","prevent","previous","price","pride","priest","primarily","primary","prime","principal","principle","print","prior","priority","prison","prisoner","privacy","private","probably","problem","procedure","proceed","process","produce","product","production","profession","professional","professor","profit","program","progress","project","promise","promote","prompt","proof","proper","property","proportion","proposal","propose","prospect","protect","protection","protein","protest","proud","prove","provide","provider","province","provision","provoke","psychology","public","publication","publicity","publish","pull","pump","punch","punish","purchase","pure","purpose","pursue","push","put","puzzle","qualify","quality","quantity","quarter","queen","question","quick","quickly","quiet","quietly","quit","quite","quote","race","radical","radio","rage","rail","rain","raise","range","rank","rapid","rare","rarely","rate","rather","rating","ratio","raw","reach","react","reaction","read","reader","reading","ready","real","reality","realize","really","reason","reasonable","recall","receive","recent","recipe","reckon","recognition","recognize","recommend","record","recover","recruit","red","reduce","reduction","refer","reference","reflect","reform","refresh","refugee","refuse","regard","regime","region","register","regret","regular","regulate","reject","relate","relation","relationship","relative","relax","release","relevant","relief","religion","religious","rely","remain","remark","remedy","remember","remind","remote","remove","render","rent","repair","repeat","replace","reply","report","represent","republic","reputation","request","require","requirement","research","reserve","reside","resident","resign","resist","resolution","resolve","resort","resource","respect","respond","response","responsibility","responsible","rest","restaurant","restore","restrict","result","retain","retire","retreat","return","reveal","revenue","reverse","review","revolution","reward","rhythm","rich","ride","rifle","right","ring","riot","rip","rise","risk","ritual","rival","river","road","rock","rocket","role","roll","romantic","roof","room","root","rope","rough","roughly","round","route","routine","row","royal","rub","rubber","ruin","rule","ruler","run","runaway","running","rural","rush","sacred","sacrifice","sad","safe","safety","sail","sake","salad","salary","sale","salt","salvation","sample","sanction","sand","satellite","satisfaction","satisfy","save","saving","scale","scandal","scatter","scene","schedule","scheme","scholar","scholarship","school","science","scientist","scope","score","scream","screen","script","seal","search","season","seat","second","secret","secretary","section","sector","secure","security","see","seed","seek","select","selection","self","sell","senate","senator","send","senior","sense","sensitive","sentence","separate","sequence","series","serious","serve","service","session","set","settle","settlement","setup","seven","several","severe","shade","shadow","shake","shall","shape","share","sharp","shed","sheet","shelf","shell","shelter","shield","shift","shine","ship","shirt","shock","shoe","shoot","shop","shopping","shore","short","shortly","shot","should","shoulder","shout","show","shower","shrug","shut","sick","side","sight","sign","signal","significant","silence","silent","silk","silly","silver","similar","simple","simply","simulate","single","sister","sit","site","situation","size","skill","skin","skirt","sky","slave","sleep","slice","slide","slight","slip","slope","slow","slowly","small","smart","smell","smile","smoke","smooth","snap","snow","so-called","social","society","soft","software","soil","solar","soldier","solid","solution","solve","some","somebody","somehow","someone","something","sometimes","somewhat","son","song","soon","sophisticated","sorry","sort","soul","sound","source","south","southern","space","span","speak","speaker","special","specialist","species","specific","speech","speed","spell","spend","sphere","spill","spin","spirit","spiritual","split","spoke","sponsor","spoon","sport","spot","spray","spread","spring","square","squeeze","stable","staff","stage","stair","stake","stand","standard","standing","star","stare","start","state","statement","station","statistics","status","stay","steady","steal","steam","steel","steep","steer","stem","step","stick","stiff","still","stock","stomach","stone","stop","storage","store","storm","story","straight","strain","strange","stranger","strategy","stream","street","strength","stress","stretch","strike","string","strip","stroke","strong","structure","struggle","student","studio","study","stuff","stupid","style","subject","submit","subsequent","substance","substitute","suburb","succeed","success","successful","such","suck","sudden","suddenly","suffer","sufficient","sugar","suggest","suggestion","suicide","suit","summer","summit","sun","super","supply","support","suppose","supreme","sure","surely","surface","surgery","surprise","surrender","surround","survey","survival","survive","survivor","suspect","suspend","sustain","swallow","swear","sweep","sweet","swim","swing","switch","symbol","sympathy","symptom","system","table","tackle","tactic","tail","take","tale","talent","talk","tall","tank","tape","target","task","taste","tax","teach","teacher","teaching","team","tear","technical","technique","technology","tell","temperature","temple","temporary","tenant","tend","tendency","tender","tennis","tension","term","terms","terrain","terrible","territory","terror","test","text","than","thank","thanks","that","theater","theft","theme","then","theory","therapy","there","therefore","they","thick","thin","thing","think","thinking","third","thirty","this","thorough","though","thought","thousand","threat","threaten","three","throat","through","throughout","throw","thumb","thus","ticket","tie","tight","till","time","tiny","tip","tire","tired","tissue","title","today","together","tomorrow","tone","tongue","tonight","tool","tooth","top","topic","toss","total","totally","touch","tough","tour","tourist","tournament","toward","towards","tower","town","track","trade","tradition","traditional","traffic","tragedy","trail","train","training","transfer","transform","transition","translate","transport","trap","trash","travel","tray","treat","treatment","treaty","tree","tremendous","trend","trial","tribe","trick","trigger","trip","triumph","troop","trophy","trouble","truck","true","truly","trunk","trust","truth","try","tube","tumble","tune","tunnel","turn","twelve","twenty","twice","twin","twist","type","typical","ugly","ultimate","umbrella","unable","uncle","under","undergo","understand","undertake","unemployment","unfold","unfortunate","uniform","union","unique","unit","unite","unity","universal","universe","university","unknown","unless","unlike","unlikely","unusual","update","upon","upper","upset","urban","urge","use","used","useful","user","usual","utility","vacation","vacuum","valid","valley","valuable","value","variable","variation","variety","various","vary","vast","vehicle","venture","version","versus","vertical","very","vessel","veteran","via","victim","victory","video","view","village","violate","violence","violent","virtually","virtue","virus","visible","vision","visit","visitor","visual","vital","vitamin","vocal","voice","volume","volunteer","vote","vulnerable","wage","wait","walk","wall","wander","want","war","warm","warn","warning","warrant","warrior","wash","waste","watch","water","wave","way","weak","wealth","wealthy","weapon","wear","weather","web","wedding","week","weekend","weekly","weigh","weight","welcome","welfare","well","west","western","wet","whale","what","whatever","wheel","when","whenever","where","whereas","whether","which","while","whisper","white","whole","who","whoever","whom","whose","why","wide","widely","widespread","width","wife","wild","will","willing","win","wind","window","wine","wing","winner","winter","wipe","wire","wisdom","wise","wish","wit","witch","withdraw","within","without","witness","woman","wonder","wonderful","wood","wooden","word","work","worker","working","workshop","world","worldwide","worm","worry","worse","worship","worst","worth","worthy","would","wound","wrap","write","writer","writing","written","wrong","yard","yeah","year","yell","yellow","yes","yesterday","yet","yield","young","your","yourself","youth","zone"
 ];
 
 // ============================================================
@@ -578,10 +580,12 @@ const CONSONANTS = 'bcdfghjklmnpqrstvwxyz';
 // CORE FUNCTIONS
 // ============================================================
 
+// Rejection-sampling CSPRNG — no modulo bias
 function randInt(min, max) {
   const range = max - min + 1;
+  const maxValid = 0xFFFFFFFF - (0xFFFFFFFF % range);
   const arr = new Uint32Array(1);
-  crypto.getRandomValues(arr);
+  do { crypto.getRandomValues(arr); } while (arr[0] >= maxValid);
   return min + (arr[0] % range);
 }
 
@@ -613,27 +617,19 @@ function generateXkcd(wordCount, separator, capitalize, appendNumber) {
 function entropyXkcd(wordCount, capitalize, appendNumber) {
   const poolSize = WORDS.length;
   let bits = wordCount * Math.log2(poolSize);
-  if (capitalize) bits += wordCount; // each word doubles (1 bit per word)
-  if (appendNumber) bits += Math.log2(100); // 0-99
+  if (capitalize) bits += wordCount;
+  if (appendNumber) bits += Math.log2(100);
   return bits;
 }
 
-// --- Alphanumeric ---
+// --- Alphanumeric (with built-in type guarantees) ---
 function generateAlphanumeric(length) {
   const all = CHARS.upper + CHARS.lower + CHARS.digits;
-  let pw = '';
-  for (let i = 0; i < length; i++) pw += all[randInt(0, all.length - 1)];
-  // ensure at least one of each type
-  if (!pw.split('').some(c => CHARS.upper.includes(c))) {
-    pw = pw.slice(0, -1) + pick(CHARS.upper);
-  }
-  if (!pw.split('').some(c => CHARS.lower.includes(c))) {
-    pw = pw.slice(0, -1) + pick(CHARS.lower);
-  }
-  if (!pw.split('').some(c => CHARS.digits.includes(c))) {
-    pw = pw.slice(0, -1) + pick(CHARS.digits);
-  }
-  return pw;
+  // Start with one of each required type, then fill randomly
+  const parts = [pick(CHARS.upper), pick(CHARS.lower), pick(CHARS.digits)];
+  for (let i = 3; i < length; i++) parts.push(all[randInt(0, all.length - 1)]);
+  shuffle(parts);
+  return parts.join('');
 }
 
 function entropyAlphanumeric(length) {
@@ -676,25 +672,12 @@ function getStrengthLevel(entropy) {
   return { level: 'Very Strong', color: 'var(--purple)', pct: Math.min(entropy / 128 * 100, 100) };
 }
 
-function showStrength(entropy) {
-  const s = getStrengthLevel(entropy);
-  return `
-    <div class="strength-meter">
-      <div class="strength-bar"><div class="strength-fill" style="width:${s.pct}%;background:${s.color};"></div></div>
-      <div class="strength-label">
-        <span style="color:${s.color}">${s.level}</span>
-        <span class="entropy">${entropy.toFixed(1)} bits</span>
-      </div>
-    </div>`;
-}
-
 // --- Clipboard ---
 async function copyToClipboard(text) {
   try {
     await navigator.clipboard.writeText(text);
     toast('Copied!', 'success');
   } catch {
-    // Fallback
     const ta = document.createElement('textarea');
     ta.value = text;
     ta.style.position = 'fixed'; ta.style.opacity = '0';
@@ -716,13 +699,19 @@ function toast(msg, type = 'info') {
   setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 2500);
 }
 
+// --- Escape for text content (safe — uses DOM API, no interpolation issues) ---
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
 // ============================================================
 // VAULT (sessionStorage)
 // ============================================================
 
 let vault = [];
 const STORAGE_KEY = 'pwvault_entries';
-const SALT_KEY = 'pwvault_salt';
 
 function loadVault() {
   try {
@@ -764,7 +753,9 @@ function clearVault() {
   }
 }
 
-function renderVault(filter = '') {
+function maskPassword(pw) { return '•'.repeat(Math.min(pw.length, 20)); }
+
+function renderVault(filter) {
   const container = document.getElementById('vault-content');
   const countEl = document.getElementById('vault-count');
   const search = (filter || document.getElementById('vault-search').value || '').toLowerCase();
@@ -785,52 +776,104 @@ function renderVault(filter = '') {
     return;
   }
 
-  let html = `<table class="vault-table"><thead><tr><th>Site</th><th>Username</th><th>Password</th><th class="actions-cell">Actions</th></tr></thead><tbody>`;
+  // Render using DOM APIs — no inline onclick, no interpolated attribute strings
+  container.innerHTML = '';
+  const table = document.createElement('table');
+  table.className = 'vault-table';
+  table.innerHTML = '<thead><tr><th>Site</th><th>Username</th><th>Password</th><th class="actions-cell">Actions</th></tr></thead>';
+  const tbody = document.createElement('tbody');
+
   for (const entry of filtered) {
-    html += `<tr>
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
       <td><strong>${escHtml(entry.site)}</strong></td>
       <td>${escHtml(entry.username || '—')}</td>
-      <td class="pw-cell" data-full="${escAttr(entry.password)}">${escHtml(maskPassword(entry.password))}</td>
-      <td class="actions-cell">
-        <button class="btn btn-sm" onclick="revealPassword('${entry.id}')" title="Reveal">👁</button>
-        <button class="btn btn-sm" onclick="copyPassword('${entry.id}')" title="Copy">📋</button>
-        <button class="btn btn-sm btn-danger" onclick="deleteEntry('${entry.id}')" title="Delete">🗑</button>
-      </td>
-    </tr>`;
+      <td class="pw-cell">${escHtml(maskPassword(entry.password))}</td>
+      <td class="actions-cell"></td>`;
+
+    const actionsCell = tr.querySelector('.actions-cell');
+    const id = entry.id;
+
+    // Reveal toggle button
+    const revealBtn = document.createElement('button');
+    revealBtn.className = 'btn btn-sm';
+    revealBtn.title = 'Reveal';
+    revealBtn.textContent = '👁';
+    revealBtn.dataset.action = 'reveal';
+    revealBtn.dataset.entryId = id;
+    actionsCell.appendChild(revealBtn);
+
+    // Copy button
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'btn btn-sm';
+    copyBtn.title = 'Copy';
+    copyBtn.textContent = '📋';
+    copyBtn.dataset.action = 'copy';
+    copyBtn.dataset.entryId = id;
+    actionsCell.appendChild(copyBtn);
+
+    // Delete button
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-sm btn-danger';
+    delBtn.title = 'Delete';
+    delBtn.textContent = '🗑';
+    delBtn.dataset.action = 'delete';
+    delBtn.dataset.entryId = id;
+    actionsCell.appendChild(delBtn);
+
+    tbody.appendChild(tr);
   }
-  html += '</tbody></table>';
-  container.innerHTML = html;
+  table.appendChild(tbody);
+  container.appendChild(table);
 }
 
-function maskPassword(pw) { return '•'.repeat(Math.min(pw.length, 20)); }
+// Event delegation for vault actions
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
 
-function escHtml(s) {
-  const d = document.createElement('div');
-  d.textContent = s;
-  return d.innerHTML;
-}
-function escAttr(s) { return s.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  const action = btn.dataset.action;
+  const container = btn.closest('#vault-content, #generated-list');
 
-// These are global for onclick
-window.deleteEntry = function(id) {
-  removeFromVault(id);
-};
-window.copyPassword = function(id) {
-  const entry = vault.find(e => e.id === id);
-  if (entry) copyToClipboard(entry.password);
-};
-window.revealPassword = function(id) {
-  const entry = vault.find(e => e.id === id);
-  if (!entry) return;
-  const cell = document.querySelector(`.pw-cell[data-full="${escAttr(entry.password)}"]`);
-  if (cell) {
-    if (cell.textContent === maskPassword(entry.password)) {
-      cell.textContent = entry.password;
-    } else {
-      cell.textContent = maskPassword(entry.password);
+  // --- Vault actions ---
+  if (container && container.id === 'vault-content') {
+    const id = btn.dataset.entryId;
+    if (!id) return;
+    const entry = vault.find(e => e.id === id);
+    if (!entry) return;
+
+    if (action === 'copy') {
+      copyToClipboard(entry.password);
+    } else if (action === 'delete') {
+      removeFromVault(id);
+    } else if (action === 'reveal') {
+      const row = btn.closest('tr');
+      const cell = row && row.querySelector('.pw-cell');
+      if (!cell) return;
+      if (cell.textContent === maskPassword(entry.password)) {
+        cell.textContent = entry.password;
+      } else {
+        cell.textContent = maskPassword(entry.password);
+      }
+    }
+    return;
+  }
+
+  // --- Generated password actions ---
+  if (container && container.id === 'generated-list') {
+    const b64 = btn.dataset.b64Pw;
+    if (!b64) return;
+    // Safe: atob on a known string we created — no user content involved
+    const pw = atob(b64);
+
+    if (action === 'copy-pw') {
+      copyToClipboard(pw);
+    } else if (action === 'breach-pw') {
+      switchTab('vault');
+      showBreachInVault(pw);
     }
   }
-};
+});
 
 // ============================================================
 // BREACH CHECK (HaveIBeenPwned k-anonymity API)
@@ -860,21 +903,37 @@ async function checkBreach(password) {
   return 0;
 }
 
-window.runBreachCheck = async function(password) {
-  const resultEl = document.getElementById('breach-result');
-  resultEl.innerHTML = '<span class="breach-loading">🔍 Checking HaveIBeenPwned (k-anonymity)...</span>';
-  resultEl.style.display = 'block';
-  try {
-    const count = await checkBreach(password);
-    if (count > 0) {
-      resultEl.innerHTML = `<span class="breach-compromised">⚠ Password found in ${count.toLocaleString()} breach(es)! Do not reuse this password.</span>`;
-    } else {
-      resultEl.innerHTML = `<span class="breach-safe">✅ No known breaches for this password.`;
+function showBreachInVault(password) {
+  const container = document.getElementById('vault-content');
+
+  // Remove existing breach result card if any
+  const existing = container.querySelector('.breach-card');
+  if (existing) existing.remove();
+
+  const card = document.createElement('div');
+  card.className = 'card breach-card';
+  card.style.marginBottom = '12px';
+  card.innerHTML = `<div class="card-title">Breach Check</div><div class="breach-loading">🔍 Checking HaveIBeenPwned (k-anonymity)...</div>`;
+  container.insertBefore(card, container.firstChild);
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  checkBreach(password).then(count => {
+    const el = card.querySelector('.breach-loading');
+    if (el) {
+      el.className = '';
+      el.className = count > 0 ? 'breach-compromised' : 'breach-safe';
+      el.textContent = count > 0
+        ? `⚠ Password found in ${count.toLocaleString()} breach(es)! Do not reuse this password.`
+        : `✅ No known breaches for this password.`;
     }
-  } catch (err) {
-    resultEl.innerHTML = `<span class="breach-error">⚠ Breach check failed: ${err.message}</span>`;
-  }
-};
+  }).catch(err => {
+    const el = card.querySelector('.breach-loading');
+    if (el) {
+      el.className = 'breach-error';
+      el.textContent = `⚠ Breach check failed: ${err.message}`;
+    }
+  });
+}
 
 // ============================================================
 // ENCRYPTED EXPORT (AES-GCM)
@@ -903,7 +962,7 @@ async function exportVault(passphrase) {
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const key = await deriveKey(passphrase, salt);
 
-    const plaintext = JSON.stringify({ entries: vault, exported: new Date().toISOString(), version: 1 });
+    const plaintext = JSON.stringify({ entries: vault, exported: new Date().toISOString(), version: 2 });
     const enc = new TextEncoder();
     const ciphertext = await crypto.subtle.encrypt(
       { name: 'AES-GCM', iv },
@@ -911,16 +970,19 @@ async function exportVault(passphrase) {
       enc.encode(plaintext)
     );
 
-    // Pack as base64: salt(16) + iv(12) + ciphertext
+    // Pack as binary: salt(16) + iv(12) + ciphertext → base64
     const combined = new Uint8Array(salt.length + iv.length + ciphertext.byteLength);
     combined.set(salt, 0);
     combined.set(iv, salt.length);
     combined.set(new Uint8Array(ciphertext), salt.length + iv.length);
 
-    // Convert to base64
-    const binary = String.fromCharCode(...combined);
+    // Convert bytes to base64 via binary string
+    let binary = '';
+    for (let i = 0; i < combined.length; i++) {
+      binary += String.fromCharCode(combined[i]);
+    }
     const b64 = btoa(binary);
-    const blob = `PWVAULT1:${b64}`;
+    const blob = `PWVAULT2:${b64}`;
 
     document.getElementById('export-output').value = blob;
     toast('Vault encrypted and exported', 'success');
@@ -933,8 +995,15 @@ async function importVault(blob, passphrase) {
   if (!blob || !passphrase) { toast('Both blob and passphrase are required', 'error'); return; }
 
   try {
-    if (!blob.startsWith('PWVAULT1:')) throw new Error('Invalid blob format');
-    const b64 = blob.slice(9);
+    let version, b64;
+    if (blob.startsWith('PWVAULT2:')) {
+      version = 2; b64 = blob.slice(9);
+    } else if (blob.startsWith('PWVAULT1:')) {
+      version = 1; b64 = blob.slice(9);
+    } else {
+      throw new Error('Invalid blob format — expected PWVAULT1: or PWVAULT2:');
+    }
+
     const binary = atob(b64);
     const combined = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) combined[i] = binary.charCodeAt(i);
@@ -949,7 +1018,6 @@ async function importVault(blob, passphrase) {
     const data = JSON.parse(new TextDecoder().decode(decrypted));
     if (!data.entries || !Array.isArray(data.entries)) throw new Error('Invalid vault data');
 
-    // Merge entries (append, not replace)
     const existing = vault.length;
     vault = vault.concat(data.entries.map(e => ({
       ...e,
@@ -1107,27 +1175,63 @@ function generatePasswords() {
     totalEntropy += entropy;
   }
 
-  // Render passwords
-  let html = '';
+  // Build generated-password cards using DOM APIs — no inline onclick
+  listEl.innerHTML = '';
+
   for (const { pw, entropy } of pws) {
     const s = getStrengthLevel(entropy);
-    html += `
-      <div class="password-display" style="margin-bottom:8px;">
-        <span class="pw-text">${escHtml(pw)}</span>
-        <span class="pw-actions">
-          <button class="btn btn-sm" onclick="copyToClipboard('${escAttr(pw)}')" title="Copy">📋</button>
-          <button class="btn btn-sm" onclick="checkBreachFor('${escAttr(pw)}')" title="Breach Check">🔍</button>
-        </span>
-      </div>
-      <div class="strength-meter" style="margin-bottom:12px;padding-left:0;">
-        <div class="strength-bar"><div class="strength-fill" style="width:${s.pct}%;background:${s.color};"></div></div>
-        <div class="strength-label">
-          <span style="color:${s.color}">${s.level}</span>
-          <span class="entropy">${entropy.toFixed(1)} bits</span>
-        </div>
+
+    const container = document.createElement('div');
+
+    // Password display
+    const display = document.createElement('div');
+    display.className = 'password-display';
+    display.style.marginBottom = '8px';
+
+    const pwText = document.createElement('span');
+    pwText.className = 'pw-text';
+    pwText.textContent = pw; // DOM API — safe, no escaping needed
+
+    const actions = document.createElement('span');
+    actions.className = 'pw-actions';
+
+    // Copy button — store password as base64 in data attribute
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'btn btn-sm';
+    copyBtn.title = 'Copy';
+    copyBtn.dataset.action = 'copy-pw';
+    copyBtn.dataset.b64Pw = btoa(pw); // btoa is safe here — we generated the string
+    copyBtn.textContent = '📋';
+
+    // Breach check button
+    const breachBtn = document.createElement('button');
+    breachBtn.className = 'btn btn-sm';
+    breachBtn.title = 'Breach Check';
+    breachBtn.dataset.action = 'breach-pw';
+    breachBtn.dataset.b64Pw = btoa(pw);
+    breachBtn.textContent = '🔍';
+
+    actions.appendChild(copyBtn);
+    actions.appendChild(breachBtn);
+    display.appendChild(pwText);
+    display.appendChild(actions);
+
+    // Strength bar
+    const meter = document.createElement('div');
+    meter.className = 'strength-meter';
+    meter.style.marginBottom = '12px';
+    meter.style.paddingLeft = '0';
+    meter.innerHTML = `
+      <div class="strength-bar"><div class="strength-fill" style="width:${s.pct}%;background:${s.color};"></div></div>
+      <div class="strength-label">
+        <span style="color:${s.color}">${s.level}</span>
+        <span class="entropy">${entropy.toFixed(1)} bits</span>
       </div>`;
+
+    container.appendChild(display);
+    container.appendChild(meter);
+    listEl.appendChild(container);
   }
-  listEl.innerHTML = html;
 
   // Summary
   const avg = totalEntropy / pws.length;
@@ -1142,51 +1246,6 @@ function generatePasswords() {
       </div>
     </div>`;
 }
-
-// Global for onclick breach check
-window.checkBreachFor = function(password) {
-  switchTab('vault');
-  // Add a breach check section in the vault
-  const container = document.getElementById('vault-content');
-  const resultDiv = document.createElement('div');
-  resultDiv.id = 'breach-result';
-  resultDiv.style.marginTop = '12px';
-  resultDiv.style.marginBottom = '12px';
-  // Check if there's already a breach result
-  const existing = document.getElementById('breach-result');
-  if (existing) existing.remove();
-
-  const header = document.createElement('div');
-  header.style.cssText = 'margin-bottom:12px;';
-  header.innerHTML = `<div class="card" style="margin-bottom:0;"><div class="card-title">Breach Check</div>`;
-  const inner = document.createElement('div');
-  inner.id = 'breach-result';
-  inner.innerHTML = `<span class="breach-loading">🔍 Checking HaveIBeenPwned (k-anonymity)...</span>`;
-  header.querySelector('.card').appendChild(inner);
-  header.querySelector('.card').innerHTML += `</div>`;
-
-  if (container.firstChild) {
-    container.insertBefore(header, container.firstChild);
-  } else {
-    container.appendChild(header);
-  }
-
-  // Scroll to it
-  header.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-  // Actually do the check (from the exposed function)
-  checkBreach(password).then(count => {
-    const resultEl = document.getElementById('breach-result');
-    if (count > 0) {
-      resultEl.innerHTML = `<span class="breach-compromised">⚠ Password found in ${count.toLocaleString()} breach(es)! Do not reuse this password.</span>`;
-    } else {
-      resultEl.innerHTML = `<span class="breach-safe">✅ No known breaches for this password.`;
-    }
-  }).catch(err => {
-    const resultEl = document.getElementById('breach-result');
-    resultEl.innerHTML = `<span class="breach-error">⚠ Breach check failed: ${err.message}</span>`;
-  });
-};
 </script>
 </body>
 </html>
